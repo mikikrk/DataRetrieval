@@ -1,6 +1,6 @@
 package pl.edu.agh.kis.dataretrieval.database;
 
-import pl.edu.agh.kis.dataretrieval.journal.configuration.NodeData;
+import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingData;
 
 public class FieldData {
 	private String dbColName;
@@ -10,7 +10,7 @@ public class FieldData {
 	private boolean array;
 	private Object value;
 	
-	public FieldData(NodeData nodeData, Object value) {
+	public FieldData(CrawlingData nodeData, Object value) {
 		super();
 		this.dbColName = nodeData.getDbColName();
 		this.dbColType = nodeData.getDbColType();

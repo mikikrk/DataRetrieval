@@ -46,7 +46,7 @@
 	</totalcites>
 	<selfcites>
 		<text no="3">Self Cites</text>
-		<int path="parent/sibling/child" type="text" pattern="int \(.*"/>
+		<bool path="parent/sibling/child" type="text" pattern="bool \(.*"/>
 	</selfcites>
 	<selfcitesinimpactfactor>
 		<text>Self Cites to Years Used</text>

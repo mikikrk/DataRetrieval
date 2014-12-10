@@ -7,18 +7,19 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-import pl.edu.agh.kis.dataretrieval.journal.configuration.Configuration;
+import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingConfigurationReader;
+
 
 public class CrawlerDao {
 	
 	private Connection connection;
 
 	public CrawlerDao(){
-		setConnection(new Configuration().loadDbData("config.xml"));
+		setConnection(new CrawlingConfigurationReader().loadDbData("config.xml"));
 	}
 	
 	public CrawlerDao(String configPath){
-		setConnection(new Configuration().loadDbData(configPath));
+		setConnection(new CrawlingConfigurationReader().loadDbData(configPath));
 	}
 	
 	public CrawlerDao(DatabaseData dbData){
