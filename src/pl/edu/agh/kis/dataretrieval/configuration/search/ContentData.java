@@ -1,31 +1,16 @@
 package pl.edu.agh.kis.dataretrieval.configuration.search;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
+import pl.edu.agh.kis.dataretrieval.configuration.FindNodeData;
 
-public class ContentData {
-	private String benchmark;
-	private String benchmarkType;
-	private Integer benchmarkNo;
-	private String benchmarkAttr;
-	
-	private String dataType;
-	private String dataPattern;
-	
-	private String searchPath;
-	private String searchDataType;
-	
-	private boolean array;
-	private String searchNextPath;
-	
-	private String terminatorNode;
-	private String terminatorNodeType;
-	private String terminatorPath;
-	
-	private LinkedList<String> searchPathNodes;
-	private LinkedList<String> searchNextNodes;
-	private LinkedList<String> searchTerminatorNodes;
 
-	
-	private LinkData nextPageLink;
+public class ContentData extends FindNodeData{
+	private int benchmarkNo;
+
+	public int getBenchmarkNo() {
+		return benchmarkNo;
+	}
+
+	public void setBenchmarkNo(int benchmarkNo) {
+		this.benchmarkNo = benchmarkNo;
+	}
 }
