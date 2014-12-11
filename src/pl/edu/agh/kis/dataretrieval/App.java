@@ -3,8 +3,8 @@ package pl.edu.agh.kis.dataretrieval;
 import java.util.ArrayList;
 import java.util.List;
 
-import pl.edu.agh.kis.dataretrieval.configuration.search.SearchingData;
-import pl.edu.agh.kis.dataretrieval.gui.FormWindow;
+import pl.edu.agh.kis.dataretrieval.configuration.search.FormData;
+import pl.edu.agh.kis.dataretrieval.gui.forms.FormWindow;
 
 import com.meterware.httpunit.FormParameter;
 import com.meterware.httpunit.WebConversation;
@@ -37,10 +37,10 @@ public class App {
 //			   System.out.println(Arrays.asList(form.getOptions("science_year")));
 //			   form.setParameter("science_year", "2012");
 			   
-			   List<SearchingData> list = new ArrayList<SearchingData>();
-			   list.add(new SearchingData(SearchingData.FieldType.TEXT, "text"));
-			   list.add(new SearchingData(SearchingData.FieldType.RADIO, "check"));
-			   list.add(new SearchingData(SearchingData.FieldType.COMBOBOX, "select"));
+			   List<FormData> list = new ArrayList<FormData>();
+			   list.add(new FormData(FormData.FieldType.TEXT, "text"));
+			   list.add(new FormData(FormData.FieldType.RADIO, "check"));
+			   list.add(new FormData(FormData.FieldType.COMBOBOX, "select"));
 			   FormWindow ss = new FormWindow(list);
 			   ss.setVisible(true);
 			   ss.getResult();

@@ -1,5 +1,5 @@
-<url address="http://admin-apps.webofknowledge.com/JCR/JCR?SID">
-	<link type="text">establish a new session</link>
+<url address="http://admin-apps.webofknowledge.com/JCR/JCR?SID" bulkRecords="300">
+	<link type="text" value="establish a new session" />
 <!-- 	<form name="limits"> -->
 		
 <!-- 	</form> -->
@@ -15,4 +15,23 @@
 		<education>Select a Level of Education:</education>
 		<TofD>Select your favorite time of day:</TofD>
 	</form>
+	
+	<content>
+		<text>Pattern</text>
+		<link type="img" attr="name/id/text" path="parent" next="sibling" terminator="null" terminatorType="null" terminatorPath="2.parent/sibling"/>
+		<nextPageLink type="img" value="next page"/>
+	</content>
 </url>
+<bulk>
+
+	<form no="1" lastSite="120">
+		<Fname usedValues="Nowak,Jakubas"/>
+		<Lname/>
+		<gender usedValues="Male,Female" />
+		<food name="food[]" /> 
+		<quote />
+		<education/>
+		<TofD/>
+	</form>
+
+</bulk>

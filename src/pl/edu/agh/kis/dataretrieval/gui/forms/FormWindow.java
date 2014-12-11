@@ -1,4 +1,4 @@
-package pl.edu.agh.kis.dataretrieval.gui;
+package pl.edu.agh.kis.dataretrieval.gui.forms;
 
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -15,8 +15,8 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import pl.edu.agh.kis.dataretrieval.configuration.search.SearchingData;
-import pl.edu.agh.kis.dataretrieval.configuration.search.SearchingData.FieldType;
+import pl.edu.agh.kis.dataretrieval.configuration.search.FormData;
+import pl.edu.agh.kis.dataretrieval.configuration.search.FormData.FieldType;
 
 public class FormWindow extends JFrame {
 
@@ -27,14 +27,14 @@ public class FormWindow extends JFrame {
 	private JRadioButton radio;
 	private JList<String> list;
 	private JComboBox<String> combo;
-	private List<SearchingData> forms;
+	private List<FormData> forms;
 	private boolean submited;
 
 	/**
 	 * Create the frame.
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public FormWindow(List<SearchingData> forms) {
+	public FormWindow(List<FormData> forms) {
 		this.forms = forms;
 		setLayout(new GridLayout(getRowsAmount(), 1));
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -52,8 +52,8 @@ public class FormWindow extends JFrame {
 		add(btnNewButton);
 	}
 	
-	private void addForms(List<SearchingData> forms){
-		for(SearchingData form: forms){
+	private void addForms(List<FormData> forms){
+		for(FormData form: forms){
 			if ((form.getJavaFieldType() != null && form.getJavaFieldType().equals(FieldType.COMBOBOX)) || (form.getJavaFieldType() == null && form.getHtmlFieldType().equals(FieldType.COMBOBOX))){
 				label = new JLabel(form.getDescription());
 				combo = new JComboBox<String>();
@@ -110,7 +110,7 @@ public class FormWindow extends JFrame {
 		notifyAll();
 	}
 	
-	public synchronized List<SearchingData> getResult(){
+	public synchronized List<FormData> getResult(){
 		try {
 			while (!submited){
 				this.wait();
@@ -125,7 +125,7 @@ public class FormWindow extends JFrame {
 	
 	private int getRowsAmount(){
 		int size = 0;
-		for(SearchingData form: forms){
+		for(FormData form: forms){
 			size += form.getSize();
 		}
 		return size + 1;

@@ -21,7 +21,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import pl.edu.agh.kis.dataretrieval.configuration.ConfigurationReader;
-import pl.edu.agh.kis.dataretrieval.configuration.ParseException;
 import pl.edu.agh.kis.dataretrieval.database.DatabaseData;
 
 /**
@@ -31,14 +30,6 @@ import pl.edu.agh.kis.dataretrieval.database.DatabaseData;
  */
 public class CrawlingConfigurationReader extends ConfigurationReader{
 	private ArrayList<CrawlingData> configNodes;
-	private static final List<String> nodeTypes = Arrays
-			.asList("!DOCTYPE> <a> <abbr> <acronym> <address> <applet> <area> <article> <aside> <audio> <b> <base> <basefont> <bdi> <bdo> <big> <blockquote> <body> <br> <button> <canvas> <caption> <center> <cite> <code> <col> <colgroup> <comment> <datalist> <dd> <del> <details> <dfn> <dialog> <dir> <div> <dl> <dt> <em> <embed> <fieldset> <figcaption> <figure> <font> <footer> <form> <frame> <frameset> <head> <header> <h1> <h2> <h3> <h4> <h5> <h6> <hr> <html> <i> <iframe> <img> <input> <ins> <kbd> <keygen> <label> <legend> <li> <link> <main> <map> <mark> <menu> <menuitem> <meta> <meter> <nav> <noframes> <noscript> <object> <ol> <optgroup> <option> <output> <p> <param> <pre> <progress> <q> <rp> <rt> <ruby> <s> <samp> <script> <section> <select> <small> <source> <span> <strike> <strong> <style> <sub> <summary> <sup> <table> <tbody> <td> <text> <textarea> <tfoot> <th> <thead> <time> <title> <tr> <track> <tt> <u> <ul> <var> <video> <wbr"
-					.split("> <"));
-	private static final List<String> javaTypes = Arrays
-			.asList("bool,boolean,byte,char,character,double,float,int,integer,long,short,string"
-					.split(","));
-	private static final String pathRegex = "(this|(\\d*\\.?(parent|sibling|nextsibling|prevsibling|child|firstchild|lastchild)/)*(\\d*\\.?(parent|sibling|nextsibling|prevsibling|child|firstchild|lastchild))|attr)";
-	private static final List<String> sqlTypes = Arrays.asList("array,bigint,binary,bit,blob,boolean,char,clob,datalink,date,decimal,distinct,double,float,integer,jaba_object,longvarchar,longvarbinary,nchar,nclob,null,numeric,nvarchar,other,real,ref,rowid,smallint,sqlxml,struct,time,timestamp,tinyint,varbinary,varchar".split(","));
 	
 	/**
 	 * Wczytanie pliku konfiguracyjnego
@@ -49,11 +40,9 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 		configNodes = new ArrayList<CrawlingData>();
 		Document dom = loadDom(configFilePath);
 		removeEmptyNodes(dom);
-		try {
-			parse(dom);
-		} catch (ParseException e) {
-			throw new RuntimeException(e);	//zostanie zmienione na odpowiednie wypisanie do gui
-		}
+
+		parse(dom);
+//			throw new RuntimeException(e);	//TODO zostanie zmienione na odpowiednie wypisanie do gui
 		
 		Node tableNode = dom.getFirstChild();
 		
@@ -113,9 +102,12 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 		CrawlingData data = new CrawlingData();
 		data.setDbTableName(dbTableName);
 		if(node.getNodeName().equals("link")){
-			data.setBenchmark("link");
+			data.setDataType("link");
+			data.setBenchmark(node.getAttributes().getNamedItem("value").getNodeValue());
 			data.setBenchmarkType(node.getAttributes().getNamedItem("type").getNodeValue());
-			data.setBenchmarkAttr(node.getAttributes().getNamedItem("value").getNodeValue());
+			if (node.getAttributes().getNamedItem("attr") != null){
+				data.setBenchmarkAttr(node.getAttributes().getNamedItem("attr").getNodeValue());
+			}
 			Node linkNode = node.getFirstChild();
 			while (linkNode != null){
 				data.addUnderLink(loadConfigNode(linkNode, dbTableName));
@@ -251,20 +243,20 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 
 	
 
-	public void parse(String configFilePath) throws ParseException {
+	public String parse(String configFilePath) {
 		Document dom = loadDom(configFilePath);
 		removeEmptyNodes(dom);
-		parse(dom);
+		return parse(dom);
 	}
 
-	public void parse(Document dom) throws ParseException {
+	public String parse(Document dom) {
 		Node tableNode = dom.getFirstChild();
 		StringBuilder message = new StringBuilder();
 		if (tableNode.hasAttributes()) {
 			NamedNodeMap attrs = tableNode.getAttributes();
 			for (int i = 0; i < attrs.getLength(); i++){
 				if(!(attrs.item(i).getNodeName().equals("host") || attrs.item(i).getNodeName().equals("port") || attrs.item(i).getNodeName().equals("dbname") || attrs.item(i).getNodeName().equals("user") || attrs.item(i).getNodeName().equals("password"))){
-					message.append("Attribute \'" + attrs.item(i) + "\' is wrong for node \'" + tableNode.getNodeName() + "\'");
+					message.append("Attribute \'" + attrs.item(i) + "\' is wrong for node \'" + tableNode.getNodeName() + "\'\n");
 				}
 			}
 		}
@@ -273,7 +265,7 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 			if (tableNode != firstTableNode && tableNode.hasAttributes()) {
 				NamedNodeMap attrs = tableNode.getAttributes();
 				if(attrs.getLength() > 0){
-					message.append("Only the first table node can contain database attributes");
+					message.append("Only the first table node can contain database attributes\n");
 				}
 			}
 			
@@ -292,20 +284,13 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 			parseColumnDataNodes(tableNode.getFirstChild(), message);
 			tableNode = tableNode.getNextSibling();
 		}
-		if (message.length() > 0) {
-			throw new ParseException(
-					"Error in parsing configuration coused by: \n"
-							+ message.toString());
-		}
+		return message.toString();
 	}
 
 	private void parseColumnDataNodes(Node node, StringBuilder message) {
 		while (node != null) {
 			if (node.getNodeName().equals("link")) {	//link do przejscia na podstrone
-				if (node.getAttributes().getNamedItem("type") == null || node.getAttributes().getNamedItem("value") == null || node.getAttributes().getLength()!=2){
-					message.append("Wrong attributes for node \'link\'");
-				}
-//					TODO: sprawdzanie mozliwych wartosci dla typow linku
+				parseLinkNode(node, message);
 				parseColumnDataNodes(node.getFirstChild(), message);
 			} else if (node.getChildNodes() == null		
 					|| node.getChildNodes().getLength() != 2) {		//dla zwyklego wezla z danymi
@@ -322,19 +307,19 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 				NamedNodeMap attrs = node.getAttributes();
 				for (int i = 0; i < attrs.getLength(); i++){
 					if (!attrs.item(i).getNodeName().equals("type") && !attrs.item(i).getNodeName().equals("constraints")){
-						message.append("Attribute \'" + attrs.item(i).getNodeName() + "\' is not allowed in node " + node.getNodeName());
+						message.append("Attribute \'" + attrs.item(i).getNodeName() + "\' is not allowed in node " + node.getNodeName() + "\n");
 					}
 				}
 				if (attrs.getNamedItem("type") != null){
 					boolean isSqlType = false;
 					String type = attrs.getNamedItem("type").getNodeValue();
-					for (String sqlType: sqlTypes){
+					for (String sqlType: SQL_TYPES){
 						if(type.toLowerCase().matches(sqlType + "\\(\\d+\\)")){
 							isSqlType = true;
 						}
 					}
 					if (!isSqlType){
-						message.append("Wrong value for attribute \'type\' in node " + node.getNodeName());
+						message.append("Wrong value for attribute \'type\' in node " + node.getNodeName() + "\n");
 					}
 				}
 				node = node.getFirstChild();
@@ -348,12 +333,12 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 	}
 	
 	private void parseFirstChild(Node node, StringBuilder message){
-		if (nodeTypes.contains(node.getNodeName())) {
+		if (NODE_TYPES.contains(node.getNodeName())) {
 			NamedNodeMap attrs = node.getAttributes();
 			if (node.getNodeName().equals("xpath")
 					&& node.getAttributes().getLength() > 0) {
 				message.append("Wrong attributes for node \'xpath\' in "
-						+ node.getParentNode().getNodeName());
+						+ node.getParentNode().getNodeName() + "\n");
 			}
 			if ((node.getNodeName().equals("text") || node
 					.getNodeName().equals("comment"))
@@ -414,7 +399,7 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 			} else if (node.getChildNodes().getLength() > 1) {
 				message.append("Wrong benchmark in node \'"
 						+ node.getParentNode().getNodeName()
-						+ "\'. Only one benchmark element is allowed");
+						+ "\'. Only one benchmark element is allowed\n");
 			}
 		} else {
 			message.append("Wrong node type: \'" + node.getNodeName()
@@ -424,12 +409,12 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 	}
 	
 	private void parseSecondChild(Node node, StringBuilder message){
-		if (javaTypes.contains(node.getNodeName())) {
+		if (JAVA_TYPES.contains(node.getNodeName())) {
 			NamedNodeMap attrs = node.getAttributes();
 			if (attrs.getNamedItem("path") != null
 					&& attrs.getNamedItem("type") != null) {
 				if (!attrs.getNamedItem("path").getNodeValue()
-						.toLowerCase().matches(pathRegex)) {
+						.toLowerCase().matches(PATH_REGEX)) {
 					message.append("Wrongly constructed attribute \'path\' in node \'"
 							+ node.getNodeName()
 							+ "\' of \'"
@@ -462,7 +447,7 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 					if (attrs.getNamedItem("terminatorPath") != null) {
 						if (!attrs.getNamedItem("terminatorPath")
 								.getNodeValue().toLowerCase()
-								.matches(pathRegex)) {
+								.matches(PATH_REGEX)) {
 							message.append("Wrongly constructed attribute \'terminatorPath\' in node \'"
 									+ node.getNodeName()
 									+ "\' of \'"
@@ -486,7 +471,7 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 								&& !attrs
 										.getNamedItem("terminatorType")
 										.getNodeValue().equals("null")) {
-							message.append("Wrong value of attribute \'terminatorType\' in node \'"
+							message.append("Wrong value of attribute \'terminatorType\' in node \'\n"
 									+ node.getNodeName()
 									+ "\' of \'"
 									+ node.getParentNode()
@@ -514,7 +499,7 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 						if (attrs.getNamedItem("next") != null) {
 							if (!attrs.getNamedItem("next")
 									.getNodeValue().toLowerCase()
-									.matches(pathRegex)) {
+									.matches(PATH_REGEX)) {
 								message.append("Wrongly constructed attribute \'next\' in node \'"
 										+ node.getNodeName()
 										+ "\' of \'"
@@ -548,7 +533,7 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 							+ "\'\n");
 				}
 				List<String> allowedAttrs = Arrays
-						.asList("array,next,path,pattern,terminator,terminatorPath,terminatorType,text,type"
+						.asList("array,next,path,pattern,terminator,terminatorPath,terminatorType,type"
 								.split(","));
 				for (int i = 0; i < attrs.getLength(); i++) {
 					if (!allowedAttrs.contains(attrs.item(i)

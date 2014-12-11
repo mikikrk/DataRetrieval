@@ -70,16 +70,22 @@ public class SiteCrawler{
 					siteData.put(configNode.getDbTableName(), new ArrayList<FieldData>());
 					siteData.get(configNode.getDbTableName()).add(new FieldData("url", "TEXT", "", "String", false, url));
 				}
-				if(configNode.getBenchmark().equals("link")){
+				if(configNode.getDataType().equals("link")){
 					WebResponse resp = null;
-					if(configNode.getBenchmarkType().equals("img")){
-						resp = wc.getCurrentPage();
-						WebLink link = resp.getLinkWithImageText(configNode.getBenchmarkAttr());
-						link.click();
-						resp = wc.getCurrentPage();
-					}else{
-//						TODO: Other link types
+					String benchmarkType = configNode.getBenchmarkType();
+					resp = wc.getCurrentPage();
+					WebLink link;
+					if(benchmarkType.equals("img")){
+						link = resp.getLinkWithImageText(configNode.getBenchmark());
+					}else if (benchmarkType.equals("text")){
+						link = resp.getLinkWith(configNode.getBenchmark());
+					}else if (benchmarkType.equals("id")){
+						link = resp.getLinkWithID(configNode.getBenchmark());
+					} else {
+						link = resp.getLinkWithName(configNode.getBenchmark());
 					}
+					link.click();
+					resp = wc.getCurrentPage();
 					readData(resp.getDOM(), url, wc, configNode.getUnderLink(), siteData);
 				}else{
 					String expression = getXpathExpression(configNode);
