@@ -4,6 +4,10 @@ public class LinkData {
 	private String type;
 	private String benchmark;
 	
+	public LinkData(){
+		super();
+	}
+	
 	public LinkData(String type, String benchmark) {
 		super();
 		this.type = type;

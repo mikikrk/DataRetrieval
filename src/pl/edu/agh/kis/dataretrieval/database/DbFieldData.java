@@ -2,7 +2,7 @@ package pl.edu.agh.kis.dataretrieval.database;
 
 import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingData;
 
-public class FieldData {
+public class DbFieldData {
 	private String dbColName;
 	private String dbColType;
 	private String dbConstraints;
@@ -10,7 +10,7 @@ public class FieldData {
 	private boolean array;
 	private Object value;
 	
-	public FieldData(CrawlingData nodeData, Object value) {
+	public DbFieldData(CrawlingData nodeData, Object value) {
 		super();
 		this.dbColName = nodeData.getDbColName();
 		this.dbColType = nodeData.getDbColType();
@@ -20,7 +20,7 @@ public class FieldData {
 		this.value = value;
 	}
 	
-	public FieldData(String dbFieldname,
+	public DbFieldData(String dbFieldname,
 			String dbColumnType, String dbConstraints, String dataType,
 			boolean array, Object value) {
 		super();

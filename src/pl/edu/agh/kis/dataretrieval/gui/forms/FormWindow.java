@@ -1,8 +1,10 @@
 package pl.edu.agh.kis.dataretrieval.gui.forms;
 
+import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -14,93 +16,149 @@ import javax.swing.JList;
 import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 
-import pl.edu.agh.kis.dataretrieval.configuration.search.FormData;
-import pl.edu.agh.kis.dataretrieval.configuration.search.FormData.FieldType;
+import pl.edu.agh.kis.dataretrieval.configuration.search.FormFieldData;
+import pl.edu.agh.kis.dataretrieval.configuration.search.FormFieldData.FieldType;
 
 public class FormWindow extends JFrame {
 
-	private JTextField textField;
-	private JTextArea textArea;
-	private JLabel label;
-	private JCheckBox checkbox;
-	private JRadioButton radio;
-	private JList<String> list;
-	private JComboBox<String> combo;
-	private List<FormData> forms;
+	private List<FormFieldData> fields;
 	private boolean submited;
 
 	/**
 	 * Create the frame.
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public FormWindow(List<FormData> forms) {
-		this.forms = forms;
+	public FormWindow(List<FormFieldData> fields) {
+		this.fields = fields;
 		setLayout(new GridLayout(getRowsAmount(), 1));
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
 		
-		addForms(forms);
+		addForms(fields);
 		
 		JButton btnNewButton = new JButton("Submit");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				setSubmited();
+				closeWindow();
 			}
 		});
 		
 		add(btnNewButton);
 	}
 	
-	private void addForms(List<FormData> forms){
-		for(FormData form: forms){
-			if ((form.getJavaFieldType() != null && form.getJavaFieldType().equals(FieldType.COMBOBOX)) || (form.getJavaFieldType() == null && form.getHtmlFieldType().equals(FieldType.COMBOBOX))){
-				label = new JLabel(form.getDescription());
-				combo = new JComboBox<String>();
-				for (String value: form.getOptions()){
-					combo.addItem(value);
+	private void addForms(List<FormFieldData> fields){
+		for(FormFieldData field: fields){
+			if ((field.getFieldType() != null && field.getFieldType().equals(FieldType.COMBOBOX)) || (field.getFieldType() == null && field.getFieldType().equals(FieldType.COMBOBOX))){
+				JLabel label = new JLabel(field.getDescription());
+				JComboBox<String> combo = new JComboBox<String>();
+				List<String> options = field.getOptions();
+				List<String> optionsDescriptions = field.getOptionsDescriptions();
+				for (int i=0; i < options.size(); i++){
+					if (optionsDescriptions.size() < i){
+						combo.addItem(optionsDescriptions.get(i));
+					}else{
+						combo.addItem(options.get(i));
+					}
+				}
+				if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()){
+					combo.setSelectedItem(field.getDefaultValue());
 				}
 				add(label);
 				add(combo);
-				form.setjForm(combo);
-			}else if ((form.getJavaFieldType() != null && form.getJavaFieldType().equals(FieldType.LIST)) || (form.getJavaFieldType() == null && form.getHtmlFieldType().equals(FieldType.LIST))){
-				label = new JLabel(form.getDescription());
-				list = new JList<String>();
-				list.setListData((String[]) form.getOptions().toArray());
+				field.setComponent(combo);
+			}else if ((field.getFieldType() != null && field.getFieldType().equals(FieldType.SELECT_ONE)) || (field.getFieldType() == null && field.getFieldType().equals(FieldType.SELECT_ONE))){
+				JLabel label = new JLabel(field.getDescription());
+				JList<String> list = new JList<String>();
+				String[] options;
+				if (field.getOptionsDescriptions().isEmpty()){
+					options = (String[]) field.getOptions().toArray();
+				}else{
+					options = (String[]) field.getOptionsDescriptions().toArray();
+				}
+				list.setListData(options);
+				list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+				if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()){
+					list.setSelectedValue(field.getDefaultValue(), true);
+				}
 				add(label);
 				add(list);
-				form.setjForm(list);
-			}else if ((form.getJavaFieldType() != null && form.getJavaFieldType().equals(FieldType.CHECKBOX)) || (form.getJavaFieldType() == null && form.getHtmlFieldType().equals(FieldType.CHECKBOX))){
-				label = new JLabel(form.getDescription());
+				field.setComponent(list);
+			}else if ((field.getFieldType() != null && field.getFieldType().equals(FieldType.SELECT_MULTIPLE)) || (field.getFieldType() == null && field.getFieldType().equals(FieldType.SELECT_MULTIPLE))){
+				JLabel label = new JLabel(field.getDescription());
+				JList<String> list = new JList<String>();
+				String[] options;
+				if (field.getOptionsDescriptions().isEmpty()){
+					options = (String[]) field.getOptions().toArray();
+				}else{
+					options = (String[]) field.getOptionsDescriptions().toArray();
+				}
+				if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()){
+					for (String value: field.getDefaultValue().split(";")){
+						list.setSelectedValue(value, false);
+					}
+				}
+				list.setListData(options);
+				list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 				add(label);
-				for (String value: form.getOptions()){
-					checkbox = new JCheckBox();
-					checkbox.setText(value);
+				add(list);
+				field.setComponent(list);
+			}else if ((field.getFieldType() != null && field.getFieldType().equals(FieldType.CHECKBOX)) || (field.getFieldType() == null && field.getFieldType().equals(FieldType.CHECKBOX))){
+				JLabel label = new JLabel(field.getDescription());
+				add(label);
+				List<String> options = field.getOptions();
+				List<String> optionsDescriptions = field.getOptionsDescriptions();
+				for (int i=0; i < options.size(); i++){
+					JCheckBox checkbox = new JCheckBox();
+					if (optionsDescriptions.size() < i){
+						checkbox.setText(optionsDescriptions.get(i));
+					}else{
+						checkbox.setText(options.get(i));
+					}
+					if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty() && Arrays.asList(field.getDefaultValue().split(";")).contains(checkbox.getText())){
+						checkbox.setSelected(true);
+					}
 					add(checkbox);
-					form.addjForm(checkbox);
+					field.addComponent(checkbox);
 				}
-			}else  if ((form.getJavaFieldType() != null && form.getJavaFieldType().equals(FieldType.RADIO)) || (form.getJavaFieldType() == null && form.getHtmlFieldType().equals(FieldType.RADIO))){
-				label = new JLabel(form.getDescription());
+			}else  if ((field.getFieldType() != null && field.getFieldType().equals(FieldType.RADIO)) || (field.getFieldType() == null && field.getFieldType().equals(FieldType.RADIO))){
+				JLabel label = new JLabel(field.getDescription());
 				add(label);
-				for (String value: form.getOptions()){
-					radio = new JRadioButton();
+				List<String> options = field.getOptions();
+				List<String> optionsDescriptions = field.getOptionsDescriptions();
+				for (int i=0; i < options.size(); i++){
+					JRadioButton radio = new JRadioButton();
 					radio.setEnabled(true);
-					radio.setText("1");
+					if (optionsDescriptions.size() < i){
+						radio.setText(optionsDescriptions.get(i));
+					}else{
+						radio.setText(options.get(i));
+					}
+					if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty() && field.getDefaultValue().equalsIgnoreCase(radio.getText())){
+						radio.setSelected(true);
+					}
 					add(radio);
-					form.addjForm(radio);
+					field.addComponent(radio);
 				}
-			}else if ((form.getJavaFieldType() != null && form.getJavaFieldType().equals(FieldType.TEXT)) || (form.getJavaFieldType() == null && form.getHtmlFieldType().equals(FieldType.TEXT))){
-				label = new JLabel(form.getDescription());
-				textField = new JTextField();
+			}else if ((field.getFieldType() != null && field.getFieldType().equals(FieldType.TEXT)) || (field.getFieldType() == null && field.getFieldType().equals(FieldType.TEXT))){
+				JLabel label = new JLabel(field.getDescription());
+				JTextField textField = new JTextField();
 				add(label);
+				if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()){
+					textField.setText(field.getDefaultValue());
+				}
 				add(textField);
-				form.setjForm(textField);
-			}else if ((form.getJavaFieldType() != null && form.getJavaFieldType().equals(FieldType.TEXTAREA)) || (form.getJavaFieldType() == null && form.getHtmlFieldType().equals(FieldType.TEXTAREA))){
-				label = new JLabel(form.getDescription());
-				textArea = new JTextArea();
+				field.setComponent(textField);
+			}else if ((field.getFieldType() != null && field.getFieldType().equals(FieldType.TEXTAREA)) || (field.getFieldType() == null && field.getFieldType().equals(FieldType.TEXTAREA))){
+				JLabel label = new JLabel(field.getDescription());
+				JTextArea textArea = new JTextArea();
 				add(label);
+				if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()){
+					textArea.setText(field.getDefaultValue());
+				}
 				add(textArea);
-				form.setjForm(textArea);
+				field.setComponent(textArea);
 			}
 		}
 	}
@@ -110,7 +168,7 @@ public class FormWindow extends JFrame {
 		notifyAll();
 	}
 	
-	public synchronized List<FormData> getResult(){
+	public synchronized void waitForResult(){
 		try {
 			while (!submited){
 				this.wait();
@@ -120,15 +178,18 @@ public class FormWindow extends JFrame {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return forms;
 	}
 	
 	private int getRowsAmount(){
 		int size = 0;
-		for(FormData form: forms){
+		for(FormFieldData form: fields){
 			size += form.getSize();
 		}
 		return size + 1;
+	}
+	
+	private void closeWindow(){
+		this.dispose();
 	}
 
 }

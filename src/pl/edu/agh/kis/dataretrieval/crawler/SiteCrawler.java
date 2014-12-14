@@ -19,7 +19,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingData;
-import pl.edu.agh.kis.dataretrieval.database.FieldData;
+import pl.edu.agh.kis.dataretrieval.database.DbFieldData;
 
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebLink;
@@ -56,19 +56,19 @@ public class SiteCrawler{
 	 * @param configNodes wczytana konfiguracja
 	 * @return
 	 */
-	public Map<String, List<FieldData>> readData(Document dom, String url, WebConversation wc, List<CrawlingData> configNodes){
-		Map<String, List<FieldData>> siteData = new HashMap<String, List<FieldData>>();
+	public Map<String, List<DbFieldData>> readData(Document dom, String url, WebConversation wc, List<CrawlingData> configNodes){
+		Map<String, List<DbFieldData>> siteData = new HashMap<String, List<DbFieldData>>();
 		return readData(dom, url, wc, configNodes, siteData);
 	}
 	
-	private Map<String, List<FieldData>> readData(Document dom, String url, WebConversation wc, List<CrawlingData> configNodes, Map<String, List<FieldData>> siteData){
+	private Map<String, List<DbFieldData>> readData(Document dom, String url, WebConversation wc, List<CrawlingData> configNodes, Map<String, List<DbFieldData>> siteData){
 		XPath xPath =  XPathFactory.newInstance().newXPath();
 
 		try {
 			for (CrawlingData configNode: configNodes){
 				if (siteData.get(configNode.getDbTableName()) == null){
-					siteData.put(configNode.getDbTableName(), new ArrayList<FieldData>());
-					siteData.get(configNode.getDbTableName()).add(new FieldData("url", "TEXT", "", "String", false, url));
+					siteData.put(configNode.getDbTableName(), new ArrayList<DbFieldData>());
+					siteData.get(configNode.getDbTableName()).add(new DbFieldData("url", "TEXT", "", "String", false, url));
 				}
 				if(configNode.getDataType().equals("link")){
 					WebResponse resp = null;
@@ -99,20 +99,20 @@ public class SiteCrawler{
 							node = nodeList.item(i);
 							dataList.add(goThroughPath(configNode, node));
 						}
-						siteData.get(configNode.getDbTableName()).add(new FieldData(configNode, dataList));
+						siteData.get(configNode.getDbTableName()).add(new DbFieldData(configNode, dataList));
 					}else if(configNode.getBenchmarkNo().size() > 1){
 						for (int i: configNode.getBenchmarkNo()){
 							node = nodeList.item(i);
 							dataList.add(goThroughPath(configNode, node));
 						}
-						siteData.get(configNode.getDbTableName()).add(new FieldData(configNode, dataList));
+						siteData.get(configNode.getDbTableName()).add(new DbFieldData(configNode, dataList));
 					}else {
 						if (!configNode.getBenchmarkNo().isEmpty()){
 							node = nodeList.item(configNode.getBenchmarkNo().get(0)-1); 
 						}else{
 							node = nodeList.item(0);
 						}
-						siteData.get(configNode.getDbTableName()).add(new FieldData(configNode, goThroughPath(configNode, node)));
+						siteData.get(configNode.getDbTableName()).add(new DbFieldData(configNode, goThroughPath(configNode, node)));
 					}
 				}
 			}

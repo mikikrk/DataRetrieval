@@ -47,14 +47,14 @@ public class CrawlerDao {
 		}
 	}
 	
-	public void createTable(String tableName, List<FieldData> siteData){
+	public void createTable(String tableName, List<DbFieldData> siteData){
 		
 		try {
 			Statement statement = connection.createStatement();
 			statement.execute("DROP TABLE IF EXISTS " + tableName);
 		
 			StringBuilder sql = new StringBuilder("CREATE TABLE " + tableName + "( id SERIAL PRIMARY KEY,");
-			for (FieldData columnData: siteData){
+			for (DbFieldData columnData: siteData){
 				sql.append(columnData.getDbColName() + " " + columnData.getDbColType() + " " + columnData.getDbConstraints() + ", ");
 			}
 			sql.setCharAt(sql.length() - 2, ')');
@@ -66,7 +66,7 @@ public class CrawlerDao {
 		}
 	}
 	
-	public void addSiteData(String tableName, List<FieldData> siteData){
+	public void addSiteData(String tableName, List<DbFieldData> siteData){
 		PreparedStatement statement;
 		try {
 			statement = connection.prepareStatement(prepareSql4AddSiteData(tableName, siteData));
@@ -77,10 +77,10 @@ public class CrawlerDao {
 		}
 	}
 	
-	private String prepareSql4AddSiteData(String tableName, List<FieldData> siteData){
+	private String prepareSql4AddSiteData(String tableName, List<DbFieldData> siteData){
 		StringBuilder sql = new StringBuilder("INSERT INTO " + tableName + "( ");
 		StringBuilder sqlArgs = new StringBuilder(") VALUES(");
-		for (FieldData field: siteData){
+		for (DbFieldData field: siteData){
 			sql.append(field.getDbColName() + ", ");
 			sqlArgs.append("?, ");
 		}
@@ -90,10 +90,10 @@ public class CrawlerDao {
 		return sql.toString();
 	}
 	
-	private void prepareStatement(PreparedStatement statement, List<FieldData> data){
+	private void prepareStatement(PreparedStatement statement, List<DbFieldData> data){
 		try {
 			int i = 1;
-			for (FieldData arg: data){
+			for (DbFieldData arg: data){
 				if(arg.isArray()){
 					statement.setArray(i, connection.createArrayOf(arg.getDbColType().toLowerCase().substring(0, arg.getDbColType().indexOf('[')), ((List<Object>) arg.getValue()).toArray()));
 				}else{

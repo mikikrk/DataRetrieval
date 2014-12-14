@@ -3,9 +3,10 @@ package pl.edu.agh.kis.dataretrieval;
 import java.util.ArrayList;
 import java.util.List;
 
-import pl.edu.agh.kis.dataretrieval.configuration.search.FormData;
+import pl.edu.agh.kis.dataretrieval.configuration.search.FormFieldData;
 import pl.edu.agh.kis.dataretrieval.gui.forms.FormWindow;
 
+import com.meterware.httpunit.FormControl;
 import com.meterware.httpunit.FormParameter;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebForm;
@@ -27,23 +28,31 @@ public class App {
 //			   resp = wc.getCurrentPage();
 //
 			   WebForm form = resp.getForms()[0];
-			   System.out.println("education Options");
+//			   System.out.println("education Options");
 			   for (String s: form.getParameterNames()){
 				   System.out.println(s);
+				   FormParameter p = form.getParameter(s);
+				   for (FormControl fc: p.getControls()){
+					   System.out.println(fc.getType());
+					   System.out.println(fc.getText());
+					   System.out.println(fc.getAttribute("size").isEmpty());
+					   for (String v: fc.getOptionValues())
+						   System.out.println(v);
+					   System.out.println();
+
+				   }
+				   System.out.println();
 			   }
-			   FormParameter p = form.getParameter("food[]");
-			   System.out.println(p.getControls()[0].getType());
+//			   FormParameter p = form.getParameter("food[]");
+//			   System.out.println(p.getControls()[0].getType());
 			  
 //			   System.out.println(Arrays.asList(form.getOptions("science_year")));
 //			   form.setParameter("science_year", "2012");
 			   
-			   List<FormData> list = new ArrayList<FormData>();
-			   list.add(new FormData(FormData.FieldType.TEXT, "text"));
-			   list.add(new FormData(FormData.FieldType.RADIO, "check"));
-			   list.add(new FormData(FormData.FieldType.COMBOBOX, "select"));
+			   List<FormFieldData> list = new ArrayList<FormFieldData>();
 			   FormWindow ss = new FormWindow(list);
 			   ss.setVisible(true);
-			   ss.getResult();
+			   ss.waitForResult();
 			 
 //			   resp = form.submit();
 //			   TimeUnit.SECONDS.sleep(1);

@@ -1,144 +1,85 @@
 package pl.edu.agh.kis.dataretrieval.configuration.search;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import com.meterware.httpunit.WebForm;
+
 public class FormData {
-
-	public enum FieldType {TEXT, TEXTAREA, CHECKBOX, COMBOBOX, LIST, RADIO};
+	private Integer no;
+	private String formName;
+	private String formId;
 	
-//	from configuration file
-	private FieldType javaFieldType;
-	private String fieldName;
-	private String description;
+	private Integer buttonNo;
+	private String buttonName;
+	private String buttonId;
 	
-//	from site
-	private FieldType htmlFieldType;
-	private List<String> options = new ArrayList<String>();
-
-//	java data
-	private String result;
-	private List<Object> jForms = new ArrayList<Object>();
+	private WebForm webForm;
 	
+	private List<FormFieldData> fields;
 	
+	private int index = 0;
 	
-	public FormData(String fieldName, List<String> options) {
-		super();
-		this.fieldName = fieldName;
-		this.options = options;
+	public Integer getNo() {
+		return no;
 	}
-
-	public FormData(String fieldName) {
-		super();
-		this.fieldName = fieldName;
+	public void setNo(int no) {
+		this.no = no;
 	}
-
-	public FormData(FieldType javaFieldType, String fieldName) {
-		super();
-		this.javaFieldType = javaFieldType;
-		this.fieldName = fieldName;
+	public String getFormName() {
+		return formName;
 	}
-
-	public FormData(String fieldName, String description) {
-		super();
-		this.fieldName = fieldName;
-		this.description = description;
+	public void setFormName(String formName) {
+		this.formName = formName;
 	}
-
-	public FormData(String fieldName, String description, List<String> options) {
-		super();
-		this.fieldName = fieldName;
-		this.description = description;
-		this.options = options;
+	public String getFormId() {
+		return formId;
 	}
-
-	public FormData(FieldType javaFieldType, String fieldName,
-			String description, List<String> options) {
-		super();
-		this.javaFieldType = javaFieldType;
-		this.fieldName = fieldName;
-		this.description = description;
-		this.options = options;
+	public void setFormId(String formId) {
+		this.formId = formId;
 	}
-
-	public int getSize(){
-		if(javaFieldType.equals(FieldType.CHECKBOX) || javaFieldType.equals(FieldType.LIST) || javaFieldType.equals(FieldType.RADIO)){
-			return options.size() + (description.isEmpty() ? 0 : 1);
-		}else{
-			return 1 + (description.isEmpty() ? 0 : 1);
-		}
+	public List<FormFieldData> getFields() {
+		return fields;
+	}
+	public void setFields(List<FormFieldData> fields) {
+		this.fields = fields;
+	}
+	public void addFieldData(FormFieldData fieldData){
+		fields.add(fieldData);
 	}
 	
-	public List<Object> getjForms(){
-		return jForms;
+	public boolean hasNextField(){
+		return fields.get(index + 1) == null ? false : true;
 	}
 	
-	public void addjForm(Object jForm){
-		this.jForms.add(jForm);
+	public Object nextFlowData(){
+		return fields.get(index++);
 	}
 	
-	public Object getjForm() {
-		return jForms.get(0);
+	public void reset(){
+		index = 0;
 	}
-	
-	public void setjForm(Object jForm) {
-		if (jForms.size() > 0){
-			jForms.set(0, jForm);
-		}else{
-			jForms.add(jForm);
-		}
+	public Integer getButtonNo() {
+		return buttonNo;
 	}
-
-	public FieldType getJavaFieldType() {
-		return javaFieldType;
+	public void setButtonNo(int buttonNo) {
+		this.buttonNo = buttonNo;
 	}
-
-	public void setJavaFieldType(FieldType javaFieldType) {
-		this.javaFieldType = javaFieldType;
+	public String getButtonName() {
+		return buttonName;
 	}
-
-	public String getFieldName() {
-		return fieldName;
+	public void setButtonName(String buttonName) {
+		this.buttonName = buttonName;
 	}
-
-	public void setFieldName(String fieldName) {
-		this.fieldName = fieldName;
+	public String getButtonId() {
+		return buttonId;
 	}
-
-	public String getDescription() {
-		return description;
+	public void setButtonId(String buttonId) {
+		this.buttonId = buttonId;
 	}
-
-	public void setDescription(String description) {
-		this.description = description;
+	public WebForm getWebForm() {
+		return webForm;
 	}
-
-	public FieldType getHtmlFieldType() {
-		return htmlFieldType;
+	public void setWebForm(WebForm webForm) {
+		this.webForm = webForm;
 	}
-
-	public void setHtmlFieldType(FieldType htmlFieldType) {
-		this.htmlFieldType = htmlFieldType;
-	}
-
-	public List<String> getOptions() {
-		return options;
-	}
-
-	public void setOptions(List<String> options) {
-		this.options = options;
-	}
-
-	public String getResult() {
-		return result;
-	}
-
-	public void setResult(String result) {
-		this.result = result;
-	}
-
-	public void setjForms(List<Object> jForms) {
-		this.jForms = jForms;
-	}
-	
 }
