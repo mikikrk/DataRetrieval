@@ -6,8 +6,6 @@ import java.util.List;
 public class SearchingData {
 	private String url;
 	private int bulkRecords;
-	
-	private int crawledSites;
 
 	private List<Object> flowDataList = new ArrayList<Object>();
 	private ContentData contentFinder;
@@ -91,14 +89,6 @@ public class SearchingData {
 	
 	public void reset(){
 		index = 0;
-	}
-
-	public int getCrawledSites() {
-		return crawledSites;
-	}
-
-	public void setCrawledSites(int crawledSites) {
-		this.crawledSites = crawledSites;
 	}
 	
 }

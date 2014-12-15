@@ -1,25 +1,17 @@
 package pl.edu.agh.kis.dataretrieval.configuration.crawl;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
+import pl.edu.agh.kis.dataretrieval.RetrievalException;
 import pl.edu.agh.kis.dataretrieval.configuration.ConfigurationReader;
 import pl.edu.agh.kis.dataretrieval.database.DatabaseData;
 
@@ -35,14 +27,17 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 	 * Wczytanie pliku konfiguracyjnego
 	 * @param configFilePath - sciezka do pliku 
 	 * @return lista przetworzonych wezlow odpowiadajacych poszczegolnym danym do wyciagniecia ze strony www
+	 * @throws RetrievalException 
 	 */
-	public List<CrawlingData> load(String configFilePath) {
+	public List<CrawlingData> load(String configFilePath) throws RetrievalException {
 		configNodes = new ArrayList<CrawlingData>();
 		Document dom = loadDom(configFilePath);
 		removeEmptyNodes(dom);
 
-		parse(dom);
-//			throw new RuntimeException(e);	//TODO zostanie zmienione na odpowiednie wypisanie do gui
+		String message = parse(dom);
+		if (!message.isEmpty()){
+			throw new RetrievalException("Error occured while parsing configuration: \n" + message);	
+		}
 		
 		Node tableNode = dom.getFirstChild();
 		

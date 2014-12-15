@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import pl.edu.agh.kis.dataretrieval.configuration.search.FormFieldData;
-import pl.edu.agh.kis.dataretrieval.gui.forms.FormWindow;
+import pl.edu.agh.kis.dataretrieval.gui.windows.FormWindow;
 
 import com.meterware.httpunit.FormControl;
 import com.meterware.httpunit.FormParameter;
@@ -52,7 +52,7 @@ public class App {
 			   List<FormFieldData> list = new ArrayList<FormFieldData>();
 			   FormWindow ss = new FormWindow(list);
 			   ss.setVisible(true);
-			   ss.waitForResult();
+			   ss.waitForSubmit();
 			 
 //			   resp = form.submit();
 //			   TimeUnit.SECONDS.sleep(1);

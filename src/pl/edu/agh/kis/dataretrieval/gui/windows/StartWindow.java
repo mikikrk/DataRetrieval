@@ -1,4 +1,4 @@
-package pl.edu.agh.kis.dataretrieval.gui.forms;
+package pl.edu.agh.kis.dataretrieval.gui.windows;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -25,11 +25,12 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import pl.edu.agh.kis.dataretrieval.RetrievalException;
 import pl.edu.agh.kis.dataretrieval.gui.ConfigHelper;
-import pl.edu.agh.kis.dataretrieval.gui.PopUpDialog;
 import pl.edu.agh.kis.dataretrieval.gui.FilePathHolder;
 import pl.edu.agh.kis.dataretrieval.gui.ConfigHelper.ConfigType;
 import pl.edu.agh.kis.dataretrieval.gui.ConfigHelper.Type;
+import pl.edu.agh.kis.dataretrieval.retriever.SiteRetriever;
 
 
 public class StartWindow extends JFrame {
@@ -66,19 +67,14 @@ public class StartWindow extends JFrame {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		
-		JLabel urlLabel = new JLabel("Adres URL");
-		urlLabel.setHorizontalAlignment(SwingConstants.LEFT);
-		
-		final JTextPane urlPane = new JTextPane();
-		
-		final JLabel searchingLabel = new JLabel("Konfiguracje wyszukiwania");
+		final JLabel searchingLabel = new JLabel("Searching configurations");
 		searchingList = new JList<FilePathHolder>();
-		final JLabel crawlingLabel = new JLabel("Konfiguracje wydobywania informacji");
+		final JLabel crawlingLabel = new JLabel("Crawling configurations");
 		crawlingList = new JList<FilePathHolder>();
 		
 		refreshConfigLists();
 		
-		JButton newSearchingConfigBtn = new JButton("Dodaj");
+		JButton newSearchingConfigBtn = new JButton("Add");
 		newSearchingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				addNewConfigFile(ConfigHelper.ConfigType.SEARCHING);
@@ -86,7 +82,7 @@ public class StartWindow extends JFrame {
 			}
 		});
 		
-		JButton addCrawlingConfigButton = new JButton("Dodaj");
+		JButton addCrawlingConfigButton = new JButton("Add");
 		addCrawlingConfigButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				addNewConfigFile(ConfigHelper.ConfigType.CRAWLING);
@@ -94,62 +90,67 @@ public class StartWindow extends JFrame {
 			}
 		});
 		
-		JButton editSearchigConfigBtn = new JButton("Edytuj");
+		JButton editSearchigConfigBtn = new JButton("Edit");
 		editSearchigConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
 					public void run(){
-						new ConfigWindow(thisWindow, ConfigHelper.Type.EDIT, ConfigHelper.ConfigType.SEARCHING, (FilePathHolder) searchingList.getSelectedValue());
+						ConfigWindow configWindow = new ConfigWindow(thisWindow, ConfigHelper.Type.EDIT, ConfigHelper.ConfigType.SEARCHING, (FilePathHolder) searchingList.getSelectedValue());
+						configWindow.setVisible(true);
 					}
 				}.start();
 			}
 		});
 		
-		JButton editCrawlingConfigBtn = new JButton("Edytuj");
+		JButton editCrawlingConfigBtn = new JButton("Edit");
 		editCrawlingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
 					public void run(){
-						new ConfigWindow(thisWindow, ConfigHelper.Type.EDIT, ConfigHelper.ConfigType.CRAWLING, (FilePathHolder) crawlingList.getSelectedValue());
+						ConfigWindow configWindow = new ConfigWindow(thisWindow, ConfigHelper.Type.EDIT, ConfigHelper.ConfigType.CRAWLING, (FilePathHolder) crawlingList.getSelectedValue());
+						configWindow.setVisible(true);
 					}
 				}.start();
 			}
 		});
 		
-		JButton displaySerachingConfigBtn = new JButton("Wyswietl");
+		JButton displaySerachingConfigBtn = new JButton("Diplay");
 		displaySerachingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
 					public void run(){
-						new ConfigWindow(thisWindow, ConfigHelper.Type.DISPLAY, ConfigHelper.ConfigType.SEARCHING, (FilePathHolder) searchingList.getSelectedValue());
+						ConfigWindow configWindow = new ConfigWindow(thisWindow, ConfigHelper.Type.DISPLAY, ConfigHelper.ConfigType.SEARCHING, (FilePathHolder) searchingList.getSelectedValue());
+						configWindow.setVisible(true);
 					}
 				}.start();
 			}
 		});
 		
-		JButton displayCrawlingConfigBtn = new JButton("Wyswietl");
+		JButton displayCrawlingConfigBtn = new JButton("Display");
 		displayCrawlingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
 					public void run(){
-						new ConfigWindow(thisWindow, ConfigHelper.Type.DISPLAY, ConfigHelper.ConfigType.CRAWLING, (FilePathHolder) searchingList.getSelectedValue());
+						ConfigWindow configWindow = new ConfigWindow(thisWindow, ConfigHelper.Type.DISPLAY, ConfigHelper.ConfigType.CRAWLING, (FilePathHolder) searchingList.getSelectedValue());
+						configWindow.setVisible(true);
 					}
 				}.start();
 			}
 		});
 		
-		JButton createSearchigConfigBtn = new JButton("Utworz");
+		JButton createSearchigConfigBtn = new JButton("Create");
 		createSearchigConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
 					public void run(){
-						new ConfigWindow(thisWindow, ConfigHelper.Type.CREATE, ConfigHelper.ConfigType.SEARCHING);
+						ConfigWindow configWindow = new ConfigWindow(thisWindow, ConfigHelper.Type.CREATE, ConfigHelper.ConfigType.SEARCHING);
+						configWindow.setVisible(true);
 					}
 				}.start();
 			}
 		});
 		
-		JButton createCrawlingConfigBtn = new JButton("Utworz");
+		JButton createCrawlingConfigBtn = new JButton("Create");
 		createCrawlingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
@@ -161,19 +162,24 @@ public class StartWindow extends JFrame {
 			}
 		});
 		
-		JButton forwardBtn = new JButton("Dalej");
+		JButton forwardBtn = new JButton("Start");
 		forwardBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				String searchingConfigPath = searchingList.getSelectedValue().getFilePath();
+				String crawlingConfigPath = crawlingList.getSelectedValue().getFilePath();
+				SiteRetriever siteSearcher = new SiteRetriever(searchingConfigPath, crawlingConfigPath);
+				new Thread(siteSearcher).start();
+				closeWindow();
 			}
 		});
 		
-		JButton continueCrawlingBtn = new JButton("Kontynuuj pobieranie");
+		JButton continueCrawlingBtn = new JButton("Continue crawling");
 		continueCrawlingBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 			}
 		});
 		
-		JButton deleteSearchingConfigBtn = new JButton("Usun");
+		JButton deleteSearchingConfigBtn = new JButton("Delete");
 		deleteSearchingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				deleteConfig(((FilePathHolder) searchingList.getSelectedValue()).getFilePath(), ConfigHelper.ConfigType.SEARCHING);
@@ -181,7 +187,7 @@ public class StartWindow extends JFrame {
 			}
 		});
 		
-		JButton deleteCrawlingConfigBtn = new JButton("Usun");
+		JButton deleteCrawlingConfigBtn = new JButton("Delete");
 		deleteCrawlingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				deleteConfig(((FilePathHolder) crawlingList.getSelectedValue()).getFilePath(), ConfigHelper.ConfigType.CRAWLING);
@@ -194,11 +200,13 @@ public class StartWindow extends JFrame {
 			gl_contentPane.createParallelGroup(Alignment.TRAILING)
 				.addGroup(gl_contentPane.createSequentialGroup()
 					.addContainerGap()
-					.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
-						.addGroup(gl_contentPane.createSequentialGroup()
-							.addComponent(crawlingLabel)
-							.addPreferredGap(ComponentPlacement.RELATED, 236, Short.MAX_VALUE))
-						.addGroup(gl_contentPane.createSequentialGroup()
+					.addGroup(gl_contentPane.createParallelGroup(Alignment.TRAILING)
+						.addGroup(Alignment.LEADING, gl_contentPane.createSequentialGroup()
+							.addComponent(forwardBtn)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(continueCrawlingBtn))
+						.addComponent(crawlingLabel, Alignment.LEADING)
+						.addGroup(Alignment.LEADING, gl_contentPane.createSequentialGroup()
 							.addComponent(addCrawlingConfigButton, GroupLayout.PREFERRED_SIZE, 61, GroupLayout.PREFERRED_SIZE)
 							.addPreferredGap(ComponentPlacement.RELATED)
 							.addComponent(createCrawlingConfigBtn, GroupLayout.PREFERRED_SIZE, 67, GroupLayout.PREFERRED_SIZE)
@@ -208,10 +216,8 @@ public class StartWindow extends JFrame {
 							.addComponent(displayCrawlingConfigBtn)
 							.addPreferredGap(ComponentPlacement.RELATED)
 							.addComponent(deleteCrawlingConfigBtn, GroupLayout.PREFERRED_SIZE, 63, GroupLayout.PREFERRED_SIZE))
-						.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING, false)
+						.addGroup(Alignment.LEADING, gl_contentPane.createParallelGroup(Alignment.LEADING, false)
 							.addComponent(crawlingList, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-							.addComponent(urlLabel)
-							.addComponent(urlPane, GroupLayout.DEFAULT_SIZE, 414, Short.MAX_VALUE)
 							.addGroup(gl_contentPane.createSequentialGroup()
 								.addComponent(newSearchingConfigBtn)
 								.addPreferredGap(ComponentPlacement.RELATED)
@@ -224,21 +230,13 @@ public class StartWindow extends JFrame {
 								.addComponent(deleteSearchingConfigBtn, GroupLayout.PREFERRED_SIZE, 63, GroupLayout.PREFERRED_SIZE)
 								.addGap(61))
 							.addComponent(searchingLabel)
-							.addComponent(searchingList, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-						.addGroup(gl_contentPane.createSequentialGroup()
-							.addComponent(forwardBtn)
-							.addPreferredGap(ComponentPlacement.RELATED, 222, Short.MAX_VALUE)
-							.addComponent(continueCrawlingBtn)))
+							.addComponent(searchingList, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
 					.addGap(135))
 		);
 		gl_contentPane.setVerticalGroup(
 			gl_contentPane.createParallelGroup(Alignment.LEADING)
 				.addGroup(gl_contentPane.createSequentialGroup()
 					.addContainerGap()
-					.addComponent(urlLabel)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(urlPane, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.RELATED)
 					.addComponent(searchingLabel)
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addComponent(searchingList, GroupLayout.PREFERRED_SIZE, 124, GroupLayout.PREFERRED_SIZE)
@@ -260,10 +258,11 @@ public class StartWindow extends JFrame {
 						.addComponent(editCrawlingConfigBtn)
 						.addComponent(displayCrawlingConfigBtn)
 						.addComponent(deleteCrawlingConfigBtn))
-					.addPreferredGap(ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
 						.addComponent(forwardBtn)
-						.addComponent(continueCrawlingBtn)))
+						.addComponent(continueCrawlingBtn))
+					.addContainerGap(65, Short.MAX_VALUE))
 		);
 		contentPane.setLayout(gl_contentPane);
 	}
@@ -348,5 +347,9 @@ public class StartWindow extends JFrame {
 			PopUpDialog errorDialog = new PopUpDialog("Wyst¹pi³ b³¹d podczas usuwania konfiguracji z listy");
 			errorDialog.setVisible(true);
 		}
+	}
+	
+	private void closeWindow(){
+		this.dispose();
 	}
 }

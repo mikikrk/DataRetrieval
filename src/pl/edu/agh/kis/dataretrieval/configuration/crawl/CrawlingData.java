@@ -11,6 +11,7 @@ public class CrawlingData extends FindNodeData{
 	private String dbColName;
 	private String dbColType;
 	private String dbConstraints;
+	private boolean dbOverride;
 	
 	private ArrayList<Integer> benchmarkNo = new ArrayList<Integer>();
 	
@@ -70,5 +71,11 @@ public class CrawlingData extends FindNodeData{
 	}
 	public void setDbConstraints(String dbConstraints) {
 		this.dbConstraints = dbConstraints;
+	}
+	public boolean isDbOverride() {
+		return dbOverride;
+	}
+	public void setDbOverride(boolean dbOverride) {
+		this.dbOverride = dbOverride;
 	}
 }

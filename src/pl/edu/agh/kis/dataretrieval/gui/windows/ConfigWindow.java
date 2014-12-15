@@ -1,4 +1,4 @@
-package pl.edu.agh.kis.dataretrieval.gui.forms;
+package pl.edu.agh.kis.dataretrieval.gui.windows;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -27,7 +27,6 @@ import pl.edu.agh.kis.dataretrieval.configuration.ConfigurationReader;
 import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingConfigurationReader;
 import pl.edu.agh.kis.dataretrieval.configuration.search.SearchingConfigurationReader;
 import pl.edu.agh.kis.dataretrieval.gui.ConfigHelper;
-import pl.edu.agh.kis.dataretrieval.gui.PopUpDialog;
 import pl.edu.agh.kis.dataretrieval.gui.FilePathHolder;
 
 public class ConfigWindow extends JFrame {

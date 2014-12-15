@@ -1,4 +1,4 @@
-package pl.edu.agh.kis.dataretrieval.gui.forms;
+package pl.edu.agh.kis.dataretrieval.gui.windows;
 
 import java.awt.Component;
 import java.awt.GridLayout;
@@ -168,7 +168,7 @@ public class FormWindow extends JFrame {
 		notifyAll();
 	}
 	
-	public synchronized void waitForResult(){
+	public synchronized void waitForSubmit(){
 		try {
 			while (!submited){
 				this.wait();

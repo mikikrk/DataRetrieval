@@ -1,4 +1,4 @@
-package pl.edu.agh.kis.dataretrieval.searcher;
+package pl.edu.agh.kis.dataretrieval.retriever.webprocessors;
 
 import java.awt.Component;
 import java.io.IOException;
@@ -13,10 +13,12 @@ import javax.swing.JTextField;
 
 import org.xml.sax.SAXException;
 
+import pl.edu.agh.kis.dataretrieval.RetrievalException;
 import pl.edu.agh.kis.dataretrieval.configuration.search.FormData;
 import pl.edu.agh.kis.dataretrieval.configuration.search.FormFieldData;
-import pl.edu.agh.kis.dataretrieval.gui.forms.FormWindow;
+import pl.edu.agh.kis.dataretrieval.gui.windows.FormWindow;
 
+import com.meterware.httpunit.Button;
 import com.meterware.httpunit.FormControl;
 import com.meterware.httpunit.FormParameter;
 import com.meterware.httpunit.RadioButtonFormControl;
@@ -26,7 +28,7 @@ import com.meterware.httpunit.WebResponse;
 
 public class FormProcessor {
 
-	public void loadForm(FormData formData, WebResponse resp) throws SAXException{
+	public void loadForm(FormData formData, WebResponse resp) throws SAXException, RetrievalException{
 		WebForm form = getWebForm(formData, resp);
 		formData.setWebForm(form);
 		
@@ -35,7 +37,7 @@ public class FormProcessor {
 		}
 	}
 	
-	private WebForm getWebForm(FormData formData, WebResponse resp) throws SAXException{
+	private WebForm getWebForm(FormData formData, WebResponse resp) throws SAXException, RetrievalException{
 		WebForm form;
 		if (formData.getNo() != null){
 			form = resp.getForms()[formData.getNo()];
@@ -44,7 +46,7 @@ public class FormProcessor {
 		}else if (formData.getFormName() != null){
 			form = resp.getFormWithName(formData.getFormName());
 		}else {
-			throw new RuntimeException("No form identifier");
+			throw new RetrievalException("No form identifier");
 		}
 		return form;
 	}
@@ -55,7 +57,7 @@ public class FormProcessor {
 		fieldData.setFormParameter(formParameter);
 		
 		FormFieldData.FieldType fieldType = getFieldType(formParameter);
-		fieldData.setHtmlFieldType(fieldType);
+		fieldData.setFieldType(fieldType);
 		setFieldOptions(formParameter, fieldType, fieldData.getOptions());
 	}
 	
@@ -93,20 +95,33 @@ public class FormProcessor {
 		}
 	}
 	
-	public WebResponse submitForm(FormData formData) throws IOException, SAXException{
+	public WebResponse submitForm(FormData formData) throws RetrievalException{
 		WebForm form = formData.getWebForm();
 		for (FormFieldData fieldData: formData.getFields()){
 			fillFormField(fieldData, form);
 		}
-		
-		SubmitButton button;
-		if (formData.getButtonId() != null){
-			button = (SubmitButton) form.getButtonWithID(formData.getButtonId());
-			return form.submit(button);
-		}else if (formData.getButtonNo() != null){
-			button = (SubmitButton) form.getButtons()[formData.getButtonNo()];
-			return form.submit(button);
-		}//TODO name?
+		try{
+			SubmitButton button;
+			if (formData.getButtonId() != null){
+				button = (SubmitButton) form.getButtonWithID(formData.getButtonId());
+				return form.submit(button);
+			}else if (formData.getButtonNo() != null){
+				button = (SubmitButton) form.getButtons()[formData.getButtonNo()];
+				return form.submit(button);
+			}else if (formData.getButtonName() != null){
+				for (Button btn: form.getButtons()){
+					if (btn.getName().equals(formData.getButtonName())){
+						button = (SubmitButton) btn;
+						return form.submit(button);
+					}
+				}
+				throw new RetrievalException("Given button name does not exist");
+			}else{
+				return form.submit();
+			}
+		}catch (Exception e) {//SAXException, IOException
+			throw new RetrievalException("Could not submit form");
+		}
 	}
 	
 	private void fillFormField(FormFieldData fieldData, WebForm form){

@@ -1,4 +1,4 @@
-package pl.edu.agh.kis.dataretrieval.gui;
+package pl.edu.agh.kis.dataretrieval.gui.windows;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 
@@ -21,6 +21,7 @@ public class PopUpDialog extends JDialog {
 	 * Create the dialog.
 	 */
 	public PopUpDialog(String message) {
+		System.out.println(message);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setAlwaysOnTop(true);
 		

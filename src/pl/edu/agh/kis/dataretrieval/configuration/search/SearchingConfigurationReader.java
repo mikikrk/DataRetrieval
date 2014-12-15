@@ -7,18 +7,19 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import pl.edu.agh.kis.dataretrieval.RetrievalException;
 import pl.edu.agh.kis.dataretrieval.configuration.ConfigurationReader;
 
 public class SearchingConfigurationReader extends ConfigurationReader {
 
-	public SearchingData load(String configFilePath) {
+	public SearchingData load(String configFilePath) throws RetrievalException {
 		SearchingData searchingData = new SearchingData();
 		Document dom = loadDom(configFilePath);
 		removeEmptyNodes(dom);
 
 		String message = parse(dom);
 		if (!message.isEmpty()){
-//			throw new RuntimeException(e);	//TODO zostanie zmienione na odpowiednie wypisanie do gui
+			throw new RetrievalException("Error occured while parsing configuration: \n" + message);	
 		}
 			
 		Node urlNode = dom.getFirstChild();
@@ -36,7 +37,6 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 
 		loadContentNode(flowNode, searchingData);
 		
-//		TODO: Bulk loading
 		return searchingData;
 	}
 
@@ -49,8 +49,10 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 	private void loadUrlNode(Node urlNode, SearchingData searchingData){
 		NamedNodeMap urlAttrs = urlNode.getAttributes();
 		searchingData.setUrl(urlAttrs.getNamedItem("address").getNodeValue());
-		if (urlAttrs.getNamedItem("bulkRecords") == null){
+		if (urlAttrs.getNamedItem("bulkRecords") != null){
 			searchingData.setBulkRecords(Integer.valueOf(urlAttrs.getNamedItem("bulkRecords").getNodeValue()));
+		}else {
+			searchingData.setBulkRecords(-1);
 		}
 	}
 	
@@ -95,13 +97,16 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		
 		fieldData.setFieldName(fieldNode.getNodeName());
 		if (fieldAttrs.getNamedItem("options") != null){
-			fieldData.setOptionsDescriptions(Arrays.asList(fieldAttrs.getNamedItem("options").getNodeValue().split(",")));
+			fieldData.setOptionsDescriptions(Arrays.asList(fieldAttrs.getNamedItem("options").getNodeValue().split(";")));
 		}
 		if (fieldAttrs.getNamedItem("name") != null){
 			fieldData.setFormFieldName(fieldAttrs.getNamedItem("name").getNodeValue());
 		}
 		if (fieldAttrs.getNamedItem("value") != null){
 			fieldData.setDefaultValue(fieldAttrs.getNamedItem("value").getNodeValue());
+		}
+		if (fieldAttrs.getNamedItem("usedValues") != null){
+			fieldData.addUsedValues(Arrays.asList(fieldAttrs.getNamedItem("usedValues").getNodeValue().split(";")));
 		}
 		if (fieldNode.hasChildNodes()){
 			fieldData.setDescription(fieldNode.getFirstChild().getNodeValue());
@@ -186,7 +191,6 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			node = node.getNextSibling();
 		}
 		
-//		TODO: Bulk parsing
 		return message.toString();
 	}
 
@@ -203,12 +207,26 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		if (!urlNode.getNodeName().equalsIgnoreCase("url")) {
 			message.append("Wrong name for first node\n");
 		}
-		if ((urlNode.getAttributes().getLength() < 1 && urlNode.getAttributes().getLength() > 2)
-				|| urlNode.getAttributes().getNamedItem("address") == null) {
+		if ((urlNode.getAttributes().getLength() < 1 && urlNode.getAttributes().getLength() > 3)
+				|| urlNode.getAttributes().getNamedItem("address") == null)  {
 			message.append("Wrong parameters for node url\n");
+		}else{
+			NamedNodeMap attrs = urlNode.getAttributes();
+			for (int i = 0; i < attrs.getLength(); i++) {
+				if (!attrs.item(i).getNodeName().equals("address")
+						&& !attrs.item(i).getNodeName().equals("bulkRecords")
+						&& !attrs.item(i).getNodeName().equals("crawledSites")) {
+					message.append("Wrong attribute \'"
+							+ attrs.item(i).getNodeName()
+							+ "\' in node \'url\'\n");
+				}
+			}
 		}
 		if (urlNode.getAttributes().getNamedItem("bulkRecords") != null && !urlNode.getAttributes().getNamedItem("bulkRecords").getNodeValue().matches("\\d+")){
 			message.append("Bulk records must be an integer\n");
+		}
+		if (urlNode.getAttributes().getNamedItem("crawledSites") != null && !urlNode.getAttributes().getNamedItem("bulkRecords").getNodeValue().matches("\\d+")){
+			message.append("Crawled sites must be an integer\n");
 		}
 	}
 	
@@ -242,6 +260,10 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		}
 
 		Node fieldNode = node.getFirstChild();
+		parseFieldNodes(fieldNode, message);
+	}
+	
+	private void parseFieldNodes(Node fieldNode, StringBuilder message){	
 		while (fieldNode != null) {
 			NamedNodeMap fieldAttrs = fieldNode.getAttributes();
 
@@ -253,21 +275,38 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 								+ fieldNode.getNodeName() + "\'\n");
 					}
 				} else if (fieldAttrs.item(i).getNodeName().equals("options")) {
-					if (!fieldAttrs.item(i).getNodeValue().matches(".+(,.+)*")) {
+					if (!fieldAttrs.item(i).getNodeValue().matches(".+(;.+)*")) {
 						message.append("Wrong options value in \'"
 								+ fieldNode.getNodeName() + "\'\n");
 					} else {
 						if (fieldAttrs.getNamedItem("value") != null) {
 							List<String> options = Arrays.asList(fieldAttrs
-									.item(i).getNodeValue().split(","));
-							if (options.contains(fieldAttrs
+									.item(i).getNodeValue().split(";"));
+							if (!options.contains(fieldAttrs
 									.getNamedItem("value"))) {
 								message.append("Wrong \'value\' value in \'"
 										+ fieldNode.getNodeName() + "\'\n");
 							}
 						}
+						if (fieldAttrs.getNamedItem("usedValues") != null) {
+							List<String> options = Arrays.asList(fieldAttrs
+									.item(i).getNodeValue().split(","));
+							List<String> usedValues = Arrays.asList(fieldAttrs
+									.getNamedItem("usedValues").getNodeValue().split(";"));
+							for(String usedValue: usedValues){
+								if (!options.contains(usedValue)) {
+									message.append("Wrong \'usedValues\' value in \'"
+											+ fieldNode.getNodeName() + "\'\n");
+								}
+							}
+						}
 					}
-				} else if (!fieldAttrs.item(i).getNodeName().equals("value")
+				} else if (fieldAttrs.item(i).getNodeName().equals("usedValues")) {
+					if (!fieldAttrs.item(i).getNodeValue().matches(".+(;.+)*")) {
+						message.append("Wrong \'usedValues\' value in \'"
+								+ fieldNode.getNodeName() + "\'\n");
+					}
+ 				} else if (!fieldAttrs.item(i).getNodeName().equals("value")
 						&& !fieldAttrs.item(i).getNodeName().equals("name")) {
 					message.append("Wrong attribute \'"
 							+ fieldAttrs.item(i).getNodeName()

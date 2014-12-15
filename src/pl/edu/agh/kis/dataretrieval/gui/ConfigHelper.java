@@ -7,6 +7,8 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Scanner;
 
+import pl.edu.agh.kis.dataretrieval.gui.windows.PopUpDialog;
+
 
 public class ConfigHelper {
 

@@ -6,8 +6,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 
 import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingConfigurationReader;
+import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingData;
 
 
 public class CrawlerDao {
@@ -47,12 +49,11 @@ public class CrawlerDao {
 		}
 	}
 	
-	public void createTable(String tableName, List<DbFieldData> siteData){
-		
-		try {
+	public void createTable(String tableName, List<DbFieldData> siteData) throws SQLException{
+		if (siteData.get(0).isDbOverride() || /*!*/connection.getMetaData().getTables(null, null, tableName, new String[]{"TABLE"}) != null){ //TODO .getString("TABLE_NAME").equals(tableName)){
 			Statement statement = connection.createStatement();
 			statement.execute("DROP TABLE IF EXISTS " + tableName);
-		
+			
 			StringBuilder sql = new StringBuilder("CREATE TABLE " + tableName + "( id SERIAL PRIMARY KEY,");
 			for (DbFieldData columnData: siteData){
 				sql.append(columnData.getDbColName() + " " + columnData.getDbColType() + " " + columnData.getDbConstraints() + ", ");
@@ -60,9 +61,6 @@ public class CrawlerDao {
 			sql.setCharAt(sql.length() - 2, ')');
 			sql.append(";");
 			statement.execute(sql.toString());
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 	}
 	

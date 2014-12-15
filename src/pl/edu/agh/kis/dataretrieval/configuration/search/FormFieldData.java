@@ -2,6 +2,7 @@ package pl.edu.agh.kis.dataretrieval.configuration.search;
 
 import java.awt.Component;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import com.meterware.httpunit.FormParameter;
@@ -143,6 +144,10 @@ public class FormFieldData {
 
 	public void setUsedValues(List<String> usedValues) {
 		this.usedValues = usedValues;
+	}
+	
+	public void addUsedValues(Collection<String> usedValues){
+		this.usedValues.addAll(usedValues);
 	}
 
 	public String getDefaultValue() {

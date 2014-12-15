@@ -8,6 +8,7 @@ public class DbFieldData {
 	private String dbConstraints;
 	private String dataType;
 	private boolean array;
+	private boolean dbOverride;
 	private Object value;
 	
 	public DbFieldData(CrawlingData nodeData, Object value) {
@@ -17,18 +18,20 @@ public class DbFieldData {
 		this.dbConstraints = nodeData.getDbConstraints();
 		this.dataType = nodeData.getDataType();
 		this.array = nodeData.isArray();
+		this.dbOverride = nodeData.isDbOverride();
 		this.value = value;
 	}
 	
 	public DbFieldData(String dbFieldname,
 			String dbColumnType, String dbConstraints, String dataType,
-			boolean array, Object value) {
+			boolean array, boolean dbOverride, Object value) {
 		super();
 		this.dbColName = dbFieldname;
 		this.dbColType = dbColumnType;
 		this.dbConstraints = dbConstraints;
 		this.dataType = dataType;
 		this.array = array;
+		this.dbOverride = dbOverride;
 		this.value = value;
 	}
 	
@@ -67,6 +70,14 @@ public class DbFieldData {
 	}
 	public void setValue(Object value) {
 		this.value = value;
+	}
+
+	public boolean isDbOverride() {
+		return dbOverride;
+	}
+
+	public void setDbOverride(boolean dbOverride) {
+		this.dbOverride = dbOverride;
 	}
 	
 	
