@@ -7,9 +7,9 @@
 <!-- 		<button name/id/no></button> -->
 <!-- 	</form> -->
 	<form no="1">
-		<Fname type="text" usedValues="Nowak,Jakubas">First Name:</Fname>
+		<Fname type="text" usedValues="Nowak;Jakubas">First Name:</Fname>
 		<Lname>Last Name:</Lname>
-		<gender options="Male,Female" usedValues="Male,Female">Gender:</gender>
+		<gender options="Male;Female" usedValues="Male;Female">Gender:</gender>
 		<food name="food[]" >Favorite food</food> 
 		<quote value="aaA"/>
 		<education>Select a Level of Education:</education>
