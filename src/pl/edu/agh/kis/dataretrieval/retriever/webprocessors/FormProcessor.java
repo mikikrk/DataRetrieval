@@ -41,10 +41,19 @@ public class FormProcessor {
 		WebForm form;
 		if (formData.getNo() != null){
 			form = resp.getForms()[formData.getNo()];
+			if (form == null){
+				throw new RetrievalException("Form no " + formData.getNo() + " does not exist");
+			}
 		}else if (formData.getFormId() != null){
 			form = resp.getFormWithID(formData.getFormId());
+			if (form == null){
+				throw new RetrievalException("Form with id " + formData.getFormId() + " does not exist");
+			}
 		}else if (formData.getFormName() != null){
 			form = resp.getFormWithName(formData.getFormName());
+			if (form == null){
+				throw new RetrievalException("Form \'" + formData.getFormName() + "\' does not exist");
+			}
 		}else {
 			throw new RetrievalException("No form identifier");
 		}
@@ -62,8 +71,8 @@ public class FormProcessor {
 	}
 	
 	private FormFieldData.FieldType getFieldType(FormParameter formParameter){
-		FormControl formControl = formParameter.getControl();
-		String htmlFieldType = formControl.getType();
+		FormControl[] formControls = formParameter.getControls();
+		String htmlFieldType = formControls[0].getType();
 		FormFieldData.FieldType fieldType = null;
 		if (htmlFieldType.equals("text")){
 			fieldType = FormFieldData.FieldType.TEXT;
@@ -72,7 +81,7 @@ public class FormProcessor {
 		}else if (htmlFieldType.equals("checkbox")){
 			fieldType = FormFieldData.FieldType.CHECKBOX;
 		}else if (htmlFieldType.equals("select-one")){
-			if (formControl.getAttribute("size").isEmpty()){
+			if (formControls[0].getAttribute("size").isEmpty()){
 				fieldType = FormFieldData.FieldType.COMBOBOX;
 			}else{
 				fieldType = FormFieldData.FieldType.SELECT_ONE;
@@ -104,23 +113,34 @@ public class FormProcessor {
 			SubmitButton button;
 			if (formData.getButtonId() != null){
 				button = (SubmitButton) form.getButtonWithID(formData.getButtonId());
+				if (button == null){
+					throw new RetrievalException("Button with id \'" + formData.getButtonId() + "\' does not exist");
+				}
 				return form.submit(button);
 			}else if (formData.getButtonNo() != null){
 				button = (SubmitButton) form.getButtons()[formData.getButtonNo()];
+				if (button == null){
+					throw new RetrievalException("Button number " + formData.getButtonNo() + " does not exist");
+				}
 				return form.submit(button);
 			}else if (formData.getButtonName() != null){
-				for (Button btn: form.getButtons()){
-					if (btn.getName().equals(formData.getButtonName())){
-						button = (SubmitButton) btn;
-						return form.submit(button);
+				if (formData.getButtonName().equals("Submit")){
+					return form.submit();
+				}else{
+					for (Button btn: form.getButtons()){
+						if (btn.getName().equals(formData.getButtonName())){
+							button = (SubmitButton) btn;
+							return form.submit(button);
+						}
 					}
+					
+					throw new RetrievalException("Button with name \'" + formData.getButtonName() + "\' does not exist");
 				}
-				throw new RetrievalException("Given button name does not exist");
 			}else{
 				return form.submit();
 			}
 		}catch (Exception e) {//SAXException, IOException
-			throw new RetrievalException("Could not submit form");
+			throw new RetrievalException("Error occured while submiting form");
 		}
 	}
 	

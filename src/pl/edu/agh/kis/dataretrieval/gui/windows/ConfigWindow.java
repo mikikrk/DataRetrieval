@@ -70,7 +70,7 @@ public class ConfigWindow extends JFrame {
 	}
 	
 	private void prepareConfigWindow(){
-		setBounds(100, 100, 467, 550);
+		setBounds(100, 100, 470, 565);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -80,6 +80,8 @@ public class ConfigWindow extends JFrame {
 		configNamePane = new JTextPane();
 		
 		configXml = new JTextArea();
+		configXml.setWrapStyleWord(true);
+		configXml.setLineWrap(true);
 		
 		JLabel lblNewLabel = new JLabel("Konfiguracja");
 		

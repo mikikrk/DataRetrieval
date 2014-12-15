@@ -36,7 +36,7 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 
 		String message = parse(dom);
 		if (!message.isEmpty()){
-			throw new RetrievalException("Error occured while parsing configuration: \n" + message);	
+			throw new RetrievalException("Error occured while parsing crawling configuration: \n" + message);	
 		}
 		
 		Node tableNode = dom.getFirstChild();

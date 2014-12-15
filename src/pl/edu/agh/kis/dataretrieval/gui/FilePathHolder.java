@@ -19,7 +19,7 @@ public class FilePathHolder {
 	}
 	public void setFilePath(String filePath) {
 		this.filePath = filePath;
-		this.filename = filePath.substring(0, filePath.lastIndexOf('.')).substring(filePath.lastIndexOf(File.separator));
+		this.filename = filePath.substring(0, filePath.lastIndexOf('.')).substring(filePath.lastIndexOf(File.separator)+1);
 	}
 	
 	public String getFilename() {
@@ -36,7 +36,7 @@ public class FilePathHolder {
 	}
 	
 	private String getFilenameFromPath(String filePath){
-		return filePath.substring(0, filePath.lastIndexOf('.')).substring(filePath.lastIndexOf(File.separator));
+		return filePath.substring(0, filePath.lastIndexOf('.')).substring(filePath.lastIndexOf(File.separator)+1);
 	}
 	
 	private String getDirectoryFromPath(String filePath){

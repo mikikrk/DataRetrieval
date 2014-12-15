@@ -62,7 +62,7 @@ public class StartWindow extends JFrame {
 	 */
 	public StartWindow() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 500, 505);
+		setBounds(100, 100, 450, 472);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -320,7 +320,7 @@ public class StartWindow extends JFrame {
 		}
 		
 		if(!configFilesList.isEmpty()){
-			configList.setListData((FilePathHolder[]) configFilesList.toArray()); 
+			configList.setListData(configFilesList.toArray(new FilePathHolder[]{})); 
 		}
 	}
 	

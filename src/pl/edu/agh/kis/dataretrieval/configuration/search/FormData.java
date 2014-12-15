@@ -1,5 +1,6 @@
 package pl.edu.agh.kis.dataretrieval.configuration.search;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.meterware.httpunit.WebForm;
@@ -15,7 +16,7 @@ public class FormData {
 	
 	private WebForm webForm;
 	
-	private List<FormFieldData> fields;
+	private List<FormFieldData> fields = new ArrayList<FormFieldData>();
 	
 	private int index = 0;
 	
@@ -23,7 +24,7 @@ public class FormData {
 		return no;
 	}
 	public void setNo(int no) {
-		this.no = no;
+		this.no = no - 1;
 	}
 	public String getFormName() {
 		return formName;
@@ -62,7 +63,7 @@ public class FormData {
 		return buttonNo;
 	}
 	public void setButtonNo(int buttonNo) {
-		this.buttonNo = buttonNo;
+		this.buttonNo = buttonNo - 1;
 	}
 	public String getButtonName() {
 		return buttonName;

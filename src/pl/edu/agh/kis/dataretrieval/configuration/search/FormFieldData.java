@@ -14,9 +14,9 @@ public class FormFieldData {
 //	from configuration file
 	private String fieldName;		//nazwa pola w formularzu brana z nazwy wêz³a w pliku xml
 	private String formFieldName; //jeœli nazwy pola nie da siê ustawiæ jako wêze³ xml np. 'field[]'
-	private String description;
+	private String description = new String();
 	private String defaultValue;
-	private List<String> optionsDescriptions;
+	private List<String> optionsDescriptions = new ArrayList<String>();
 	
 //	for bulk run
 	private List<String> usedValues = new ArrayList<String>();
@@ -59,8 +59,8 @@ public class FormFieldData {
 	}
 
 	public int getSize(){
-		if(fieldType.equals(FieldType.CHECKBOX) || fieldType.equals(FieldType.SELECT_ONE) || fieldType.equals(FieldType.RADIO)){
-			return options.size() + (description.isEmpty() ? 0 : 1);
+		if(fieldType.equals(FieldType.CHECKBOX) || fieldType.equals(FieldType.SELECT_ONE) || fieldType.equals(FieldType.SELECT_MULTIPLE) || fieldType.equals(FieldType.RADIO)){
+			return (options.size() > 6 ? 6 : options.size()) + (description.isEmpty() ? 0 : 1);
 		}else{
 			return 1 + (description.isEmpty() ? 0 : 1);
 		}
@@ -172,6 +172,10 @@ public class FormFieldData {
 
 	public void setOptionsDescriptions(List<String> optionsDescriptions) {
 		this.optionsDescriptions = optionsDescriptions;
+	}
+	
+	public void addOptionsDescriptions(Collection<String> optionsDescriptions) {
+		this.optionsDescriptions.addAll(optionsDescriptions);
 	}
 	
 }

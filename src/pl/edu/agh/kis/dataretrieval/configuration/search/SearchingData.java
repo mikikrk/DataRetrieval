@@ -8,7 +8,7 @@ public class SearchingData {
 	private int bulkRecords;
 
 	private List<Object> flowDataList = new ArrayList<Object>();
-	private ContentData contentFinder;
+	private ContentData contentFinder = new ContentData();
 	
 	private int index = 0;
 	
@@ -80,7 +80,7 @@ public class SearchingData {
 	}
 	
 	public boolean hasNextFlowData(){
-		return flowDataList.get(index + 1) == null ? false : true;
+		return flowDataList.size() > index ? true : false;
 	}
 	
 	public Object nextFlowData(){

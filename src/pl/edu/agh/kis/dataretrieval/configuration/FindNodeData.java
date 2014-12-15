@@ -22,9 +22,9 @@ public class FindNodeData {
 	protected String terminatorNodeType;
 	protected String terminatorPath;
 	
-	protected LinkedList<String> searchPathNodes;
-	protected LinkedList<String> searchNextNodes;
-	protected LinkedList<String> searchTerminatorNodes;
+	protected LinkedList<String> searchPathNodes = new LinkedList<String>();
+	protected LinkedList<String> searchNextNodes = new LinkedList<String>();
+	protected LinkedList<String> searchTerminatorNodes = new LinkedList<String>();
 	
 	public String getBenchmark() {
 		return benchmark;

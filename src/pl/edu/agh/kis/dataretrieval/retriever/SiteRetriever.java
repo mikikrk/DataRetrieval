@@ -61,6 +61,7 @@ public class SiteRetriever implements Runnable{
 					FormData formData = (FormData) flowDataObj;
 					formProcessor.loadForm(formData, resp);
 					FormWindow formWindow = new FormWindow(formData.getFields());
+					formWindow.setVisible(true);
 					formWindow.waitForSubmit();
 					resp = formProcessor.submitForm(formData);
 				}

@@ -19,13 +19,13 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 
 		String message = parse(dom);
 		if (!message.isEmpty()){
-			throw new RetrievalException("Error occured while parsing configuration: \n" + message);	
+			throw new RetrievalException("Error occured while parsing searching configuration: \n" + message);	
 		}
 			
 		Node urlNode = dom.getFirstChild();
 		loadUrlNode(urlNode, searchingData);
 		
-		Node flowNode = dom.getFirstChild();
+		Node flowNode = urlNode.getFirstChild();
 		
 		while (!flowNode.getNodeName().equals("content")){
 			if (flowNode.getNodeName().equals("link")){
@@ -33,6 +33,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			}else {
 				loadFormNode(flowNode, searchingData);
 			}
+			flowNode = flowNode.getNextSibling();
 		}
 
 		loadContentNode(flowNode, searchingData);
@@ -54,14 +55,27 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		}else {
 			searchingData.setBulkRecords(-1);
 		}
+		if (urlAttrs.getNamedItem("crawledSites") != null){
+			searchingData.getContentFinder().setCrawledSites(Integer.valueOf(urlAttrs.getNamedItem("crawledSites").getNodeValue()));
+		}else {
+			searchingData.getContentFinder().setCrawledSites(0);
+		}
 	}
 	
 	private void loadLinkNode(Node node, SearchingData searchingData){
+		searchingData.addFlowData(loadLinkNode(node));
+	}
+	
+	private void loadLinkNode(Node node, ContentData contentData){
+		contentData.setNextPageLink(loadLinkNode(node));
+	}
+	
+	private LinkData loadLinkNode(Node node){
 		LinkData linkData = new LinkData();
 		NamedNodeMap linkAttrs = node.getAttributes();
 		linkData.setType(linkAttrs.getNamedItem("type").getNodeValue());
 		linkData.setBenchmark(linkAttrs.getNamedItem("value").getNodeValue());
-		searchingData.addFlowData(linkData);
+		return linkData;
 	}
 	
 	private void loadFormNode(Node node, SearchingData searchingData){
@@ -72,20 +86,21 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		}else if (formAttrs.getNamedItem("name") != null){
 			formData.setFormName(formAttrs.getNamedItem("name").getNodeValue());
 		}else if (formAttrs.getNamedItem("id") != null){
-			formData.setFormName(formAttrs.getNamedItem("id").getNodeValue());
+			formData.setFormId(formAttrs.getNamedItem("id").getNodeValue());
 		}
 		
 		if (formAttrs.getNamedItem("buttonNo") != null){
-			formData.setNo(Integer.valueOf(formAttrs.getNamedItem("buttonNo").getNodeValue()));
+			formData.setButtonNo(Integer.valueOf(formAttrs.getNamedItem("buttonNo").getNodeValue()));
 		}else if (formAttrs.getNamedItem("buttonName") != null){
-			formData.setFormName(formAttrs.getNamedItem("buttonName").getNodeValue());
+			formData.setButtonName(formAttrs.getNamedItem("buttonName").getNodeValue());
 		}else if (formAttrs.getNamedItem("buttonId") != null){
-			formData.setFormName(formAttrs.getNamedItem("buttonId").getNodeValue());
+			formData.setButtonId(formAttrs.getNamedItem("buttonId").getNodeValue());
 		}
 		
 		Node fieldNode = node.getFirstChild();
 		while (fieldNode != null){
 			loadFormFieldNode(fieldNode, formData);
+			fieldNode = fieldNode.getNextSibling();
 		}
 		
 		searchingData.addFlowData(formData);
@@ -97,7 +112,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		
 		fieldData.setFieldName(fieldNode.getNodeName());
 		if (fieldAttrs.getNamedItem("options") != null){
-			fieldData.setOptionsDescriptions(Arrays.asList(fieldAttrs.getNamedItem("options").getNodeValue().split(";")));
+			fieldData.addOptionsDescriptions(Arrays.asList(fieldAttrs.getNamedItem("options").getNodeValue().split(";")));
 		}
 		if (fieldAttrs.getNamedItem("name") != null){
 			fieldData.setFormFieldName(fieldAttrs.getNamedItem("name").getNodeValue());
@@ -115,13 +130,19 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 	}
 	
 	private void loadContentNode(Node contentNode, SearchingData searchingData){
-		ContentData contentData = new ContentData();
+		ContentData contentData = searchingData.getContentFinder();
 		
 		Node node = contentNode.getFirstChild();
 		loadFirstContentNode(node, contentData);
 		
 		node = node.getNextSibling();
 		loadSecondContentNode(node, contentData);
+		
+		node = node.getNextSibling();
+		if (node != null){
+			loadLinkNode(node, contentData);
+		}
+		searchingData.setContentFinder(contentData);
 	}
 	
 	private void loadFirstContentNode(Node node, ContentData contentData){
@@ -145,7 +166,9 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		NamedNodeMap attrs = node.getAttributes();
 		contentData.setSearchPath(attrs.getNamedItem("path").getNodeValue()
 				.toLowerCase());
-		contentData.setSearchDataType(attrs.getNamedItem("type")
+		contentData.setBenchmarkType(attrs.getNamedItem("type")
+				.getNodeValue());
+		contentData.setLinkType(attrs.getNamedItem("linkType")
 				.getNodeValue());
 		if (attrs.getNamedItem("terminator") != null) {
 			contentData.setTerminatorNode(attrs.getNamedItem("terminator")
@@ -162,14 +185,11 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 //	************************** Parsing searching configuration **************************************
 	
 	public String parse(Document dom) {
-		Node configNode = dom.getFirstChild();
+		Node urlNode = dom.getFirstChild();
 		StringBuilder message = new StringBuilder();
 		
-		removeEmptyNodes(configNode);
+		removeEmptyNodes(urlNode);
 
-		parseConfigNode(configNode, message);
-		
-		Node urlNode = configNode.getFirstChild();
 		parseUrlNode(urlNode, message);
 
 		Node node = urlNode.getFirstChild();
@@ -194,15 +214,6 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		return message.toString();
 	}
 
-	private void parseConfigNode(Node configNode, StringBuilder message){
-		if (!configNode.getNodeName().equalsIgnoreCase("config")) {
-			message.append("Wrong name for first node\n");
-		}
-		if (!configNode.hasChildNodes() || configNode.getChildNodes().getLength() > 2){
-			message.append("Wrong number of configuration nodes");
-		}
-	}
-	
 	private void parseUrlNode(Node urlNode, StringBuilder message){
 		if (!urlNode.getNodeName().equalsIgnoreCase("url")) {
 			message.append("Wrong name for first node\n");
@@ -318,6 +329,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 					}
 				}
 			}
+			fieldNode = fieldNode.getNextSibling();
 		}
 	}
 
@@ -365,7 +377,8 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		NamedNodeMap attrs = node.getAttributes();
 
 		if (attrs.getNamedItem("path") != null
-				&& attrs.getNamedItem("type") != null) {
+				&& attrs.getNamedItem("type") != null
+				&& attrs.getNamedItem("linkType") != null) {
 			if (!attrs.getNamedItem("path").getNodeValue().toLowerCase()
 					.matches(PATH_REGEX)) {
 				message.append("Wrongly constructed attribute \'path\' in node \'"
@@ -384,6 +397,11 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 				message.append("Wrong value of attribute \'type\' in node \'"
 						+ node.getNodeName() + "\' of \'"
 						+ node.getParentNode().getNodeName() + "\'\n");
+			}
+			
+			List<String> allowedLinkTypeList = Arrays.asList("img,name,id,text".split(","));
+			if (!allowedLinkTypeList.contains(attrs.getNamedItem("linkType").getNodeValue())){
+				message.append("Wrong value of attribute \'linkType\' in a content link node\n");
 			}
 
 			if (attrs.getNamedItem("terminator") != null) {
@@ -439,7 +457,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			}
 			
 			List<String> allowedAttrs = Arrays
-					.asList("next,path,terminator,terminatorPath,terminatorType,type"
+					.asList("next,path,terminator,terminatorPath,terminatorType,type,linkType"
 							.split(","));
 			for (int i = 0; i < attrs.getLength(); i++) {
 				if (!allowedAttrs.contains(attrs.item(i).getNodeName())) {
