@@ -14,6 +14,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.LayoutStyle.ComponentPlacement;
@@ -38,6 +39,7 @@ public class ConfigWindow extends JFrame {
 	
 	private JTextPane configNamePane;
 	private JTextArea configXml;
+	private JScrollPane configScroll;
 	
 	private FilePathHolder configPath;
 	private StartWindow startWindow;
@@ -70,7 +72,7 @@ public class ConfigWindow extends JFrame {
 	}
 	
 	private void prepareConfigWindow(){
-		setBounds(100, 100, 470, 565);
+		setBounds(100, 100, 600, 800);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -80,8 +82,8 @@ public class ConfigWindow extends JFrame {
 		configNamePane = new JTextPane();
 		
 		configXml = new JTextArea();
-		configXml.setWrapStyleWord(true);
-		configXml.setLineWrap(true);
+		
+		configScroll = new JScrollPane(configXml);
 		
 		JLabel lblNewLabel = new JLabel("Konfiguracja");
 		
@@ -106,11 +108,11 @@ public class ConfigWindow extends JFrame {
 			gl_contentPane.createParallelGroup(Alignment.LEADING)
 				.addGroup(gl_contentPane.createSequentialGroup()
 					.addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-					.addGroup(gl_contentPane.createParallelGroup(Alignment.TRAILING)
+					.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
 						.addComponent(configNameLbl)
-						.addComponent(configNamePane, GroupLayout.PREFERRED_SIZE, 423, GroupLayout.PREFERRED_SIZE)
+						.addComponent(configNamePane, GroupLayout.PREFERRED_SIZE, 550, GroupLayout.PREFERRED_SIZE)
 						.addComponent(lblNewLabel)
-						.addComponent(configXml, GroupLayout.PREFERRED_SIZE, 422, GroupLayout.PREFERRED_SIZE)
+						.addComponent(configScroll, GroupLayout.PREFERRED_SIZE, 550, GroupLayout.PREFERRED_SIZE)
 						.addGroup(gl_contentPane.createSequentialGroup()
 							.addComponent(parseBtn)
 							.addPreferredGap(ComponentPlacement.RELATED)
@@ -130,7 +132,7 @@ public class ConfigWindow extends JFrame {
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addComponent(lblNewLabel)
 					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(configXml, GroupLayout.PREFERRED_SIZE, 400, GroupLayout.PREFERRED_SIZE)
+					.addComponent(configScroll, GroupLayout.PREFERRED_SIZE, 620, GroupLayout.PREFERRED_SIZE)
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
 						.addComponent(returnBtn)
@@ -265,6 +267,7 @@ public class ConfigWindow extends JFrame {
 			scanner = new Scanner(file);
 			while(scanner.hasNextLine()){
 				configXml.append(scanner.nextLine());
+				configXml.append("\n");
 			}
 		} catch (FileNotFoundException e) {
 			PopUpDialog errorDialog = new PopUpDialog("Plik z wybran¹ konfiguracj¹ nie istnieje");

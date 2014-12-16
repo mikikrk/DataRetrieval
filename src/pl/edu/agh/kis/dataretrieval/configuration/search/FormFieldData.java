@@ -30,6 +30,9 @@ public class FormFieldData {
 	private String result;
 	private List<Component> components = new ArrayList<Component>();
 	
+//	after retrieval
+	private String value;
+	
 	public FormFieldData(){
 		super();
 	}
@@ -176,6 +179,14 @@ public class FormFieldData {
 	
 	public void addOptionsDescriptions(Collection<String> optionsDescriptions) {
 		this.optionsDescriptions.addAll(optionsDescriptions);
+	}
+
+	public String getValue() {
+		return value;
+	}
+
+	public void setValue(String value) {
+		this.value = value;
 	}
 	
 }

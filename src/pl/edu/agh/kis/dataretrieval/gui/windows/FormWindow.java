@@ -1,6 +1,5 @@
 package pl.edu.agh.kis.dataretrieval.gui.windows;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -8,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -126,6 +126,7 @@ public class FormWindow extends JFrame {
 					field.addComponent(checkbox);
 				}
 			}else  if (field.getFieldType() != null && field.getFieldType().equals(FieldType.RADIO)){
+				ButtonGroup bg = new ButtonGroup();
 				List<String> options = field.getOptions();
 				List<String> optionsDescriptions = field.getOptionsDescriptions();
 				for (int i=0; i < options.size(); i++){
@@ -139,7 +140,12 @@ public class FormWindow extends JFrame {
 					if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty() && field.getDefaultValue().equalsIgnoreCase(radio.getText())){
 						radio.setSelected(true);
 					}
-					add(radio);
+					if (i == 0){
+						add(radio, true);
+					}else{
+						add(radio);
+					}
+					bg.add(radio);
 					field.addComponent(radio);
 				}
 			}else if (field.getFieldType() != null && field.getFieldType().equals(FieldType.TEXT)){

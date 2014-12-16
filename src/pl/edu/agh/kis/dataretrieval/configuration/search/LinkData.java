@@ -1,6 +1,8 @@
 package pl.edu.agh.kis.dataretrieval.configuration.search;
 
-public class LinkData {
+import pl.edu.agh.kis.dataretrieval.configuration.ConfigData;
+
+public class LinkData implements ConfigData{
 	private String type;
 	private String benchmark;
 	

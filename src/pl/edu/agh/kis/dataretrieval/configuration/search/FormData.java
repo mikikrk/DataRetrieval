@@ -3,9 +3,11 @@ package pl.edu.agh.kis.dataretrieval.configuration.search;
 import java.util.ArrayList;
 import java.util.List;
 
+import pl.edu.agh.kis.dataretrieval.configuration.ConfigData;
+
 import com.meterware.httpunit.WebForm;
 
-public class FormData {
+public class FormData implements ConfigData{
 	private Integer no;
 	private String formName;
 	private String formId;

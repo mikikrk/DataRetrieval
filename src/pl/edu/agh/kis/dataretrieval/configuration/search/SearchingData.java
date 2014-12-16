@@ -1,7 +1,11 @@
 package pl.edu.agh.kis.dataretrieval.configuration.search;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import pl.edu.agh.kis.dataretrieval.configuration.ConfigData;
 
 public class SearchingData {
 	private String url;
@@ -9,7 +13,8 @@ public class SearchingData {
 
 	private List<Object> flowDataList = new ArrayList<Object>();
 	private ContentData contentFinder = new ContentData();
-	
+
+	private Map<String, ConfigData> namedElements = new HashMap<String, ConfigData>();
 	private int index = 0;
 	
 	public SearchingData() {
@@ -89,6 +94,14 @@ public class SearchingData {
 	
 	public void reset(){
 		index = 0;
+	}
+
+	public Map<String, ConfigData> getNamedElements() {
+		return namedElements;
+	}
+
+	public void putNamedElements(Map<String, ConfigData> namedElements) {
+		this.namedElements.putAll(namedElements);
 	}
 	
 }

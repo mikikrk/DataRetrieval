@@ -31,6 +31,9 @@ import pl.edu.agh.kis.dataretrieval.gui.FilePathHolder;
 import pl.edu.agh.kis.dataretrieval.gui.ConfigHelper.ConfigType;
 import pl.edu.agh.kis.dataretrieval.gui.ConfigHelper.Type;
 import pl.edu.agh.kis.dataretrieval.retriever.SiteRetriever;
+import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
+import java.awt.Dimension;
 
 
 public class StartWindow extends JFrame {
@@ -38,6 +41,8 @@ public class StartWindow extends JFrame {
 	private JPanel contentPane;
 	private JList<FilePathHolder> crawlingList;
 	private JList<FilePathHolder> searchingList;
+	private JScrollPane searchingScrollPane;
+	private JScrollPane crawlingScrollPane;
 	
 	private final StartWindow thisWindow = this;
 
@@ -68,13 +73,20 @@ public class StartWindow extends JFrame {
 		setContentPane(contentPane);
 		
 		final JLabel searchingLabel = new JLabel("Searching configurations");
-		searchingList = new JList<FilePathHolder>();
 		final JLabel crawlingLabel = new JLabel("Crawling configurations");
+		
+		searchingList = new JList<FilePathHolder>();
+		searchingList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		searchingScrollPane = new JScrollPane(searchingList);
 		crawlingList = new JList<FilePathHolder>();
+		crawlingList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		crawlingScrollPane = new JScrollPane(crawlingList);
 		
 		refreshConfigLists();
 		
 		JButton newSearchingConfigBtn = new JButton("Add");
+		newSearchingConfigBtn.setMaximumSize(new Dimension(65, 23));
+		newSearchingConfigBtn.setMinimumSize(new Dimension(65, 23));
 		newSearchingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				addNewConfigFile(ConfigHelper.ConfigType.SEARCHING);
@@ -83,6 +95,8 @@ public class StartWindow extends JFrame {
 		});
 		
 		JButton addCrawlingConfigButton = new JButton("Add");
+		addCrawlingConfigButton.setMinimumSize(new Dimension(65, 23));
+		addCrawlingConfigButton.setMaximumSize(new Dimension(65, 23));
 		addCrawlingConfigButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				addNewConfigFile(ConfigHelper.ConfigType.CRAWLING);
@@ -91,6 +105,8 @@ public class StartWindow extends JFrame {
 		});
 		
 		JButton editSearchigConfigBtn = new JButton("Edit");
+		editSearchigConfigBtn.setMaximumSize(new Dimension(65, 23));
+		editSearchigConfigBtn.setMinimumSize(new Dimension(65, 23));
 		editSearchigConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
@@ -103,6 +119,8 @@ public class StartWindow extends JFrame {
 		});
 		
 		JButton editCrawlingConfigBtn = new JButton("Edit");
+		editCrawlingConfigBtn.setMaximumSize(new Dimension(65, 23));
+		editCrawlingConfigBtn.setMinimumSize(new Dimension(65, 23));
 		editCrawlingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
@@ -115,6 +133,8 @@ public class StartWindow extends JFrame {
 		});
 		
 		JButton displaySerachingConfigBtn = new JButton("Diplay");
+		displaySerachingConfigBtn.setMaximumSize(new Dimension(65, 23));
+		displaySerachingConfigBtn.setMinimumSize(new Dimension(65, 23));
 		displaySerachingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
@@ -127,6 +147,8 @@ public class StartWindow extends JFrame {
 		});
 		
 		JButton displayCrawlingConfigBtn = new JButton("Display");
+		displayCrawlingConfigBtn.setMaximumSize(new Dimension(65, 23));
+		displayCrawlingConfigBtn.setMinimumSize(new Dimension(65, 23));
 		displayCrawlingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
@@ -163,6 +185,8 @@ public class StartWindow extends JFrame {
 		});
 		
 		JButton forwardBtn = new JButton("Start");
+		forwardBtn.setMaximumSize(new Dimension(65, 23));
+		forwardBtn.setMinimumSize(new Dimension(65, 23));
 		forwardBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				String searchingConfigPath = searchingList.getSelectedValue().getFilePath();
@@ -174,12 +198,15 @@ public class StartWindow extends JFrame {
 		});
 		
 		JButton continueCrawlingBtn = new JButton("Continue crawling");
+		continueCrawlingBtn.setMinimumSize(new Dimension(135, 23));
 		continueCrawlingBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 			}
 		});
 		
 		JButton deleteSearchingConfigBtn = new JButton("Delete");
+		deleteSearchingConfigBtn.setMaximumSize(new Dimension(65, 23));
+		deleteSearchingConfigBtn.setMinimumSize(new Dimension(65, 23));
 		deleteSearchingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				deleteConfig(((FilePathHolder) searchingList.getSelectedValue()).getFilePath(), ConfigHelper.ConfigType.SEARCHING);
@@ -188,6 +215,8 @@ public class StartWindow extends JFrame {
 		});
 		
 		JButton deleteCrawlingConfigBtn = new JButton("Delete");
+		deleteCrawlingConfigBtn.setMaximumSize(new Dimension(65, 23));
+		deleteCrawlingConfigBtn.setMinimumSize(new Dimension(65, 23));
 		deleteCrawlingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				deleteConfig(((FilePathHolder) crawlingList.getSelectedValue()).getFilePath(), ConfigHelper.ConfigType.CRAWLING);
@@ -217,7 +246,7 @@ public class StartWindow extends JFrame {
 							.addPreferredGap(ComponentPlacement.RELATED)
 							.addComponent(deleteCrawlingConfigBtn, GroupLayout.PREFERRED_SIZE, 63, GroupLayout.PREFERRED_SIZE))
 						.addGroup(Alignment.LEADING, gl_contentPane.createParallelGroup(Alignment.LEADING, false)
-							.addComponent(crawlingList, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+							.addComponent(crawlingScrollPane, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 							.addGroup(gl_contentPane.createSequentialGroup()
 								.addComponent(newSearchingConfigBtn)
 								.addPreferredGap(ComponentPlacement.RELATED)
@@ -230,7 +259,7 @@ public class StartWindow extends JFrame {
 								.addComponent(deleteSearchingConfigBtn, GroupLayout.PREFERRED_SIZE, 63, GroupLayout.PREFERRED_SIZE)
 								.addGap(61))
 							.addComponent(searchingLabel)
-							.addComponent(searchingList, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+							.addComponent(searchingScrollPane, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
 					.addGap(135))
 		);
 		gl_contentPane.setVerticalGroup(
@@ -239,7 +268,7 @@ public class StartWindow extends JFrame {
 					.addContainerGap()
 					.addComponent(searchingLabel)
 					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(searchingList, GroupLayout.PREFERRED_SIZE, 124, GroupLayout.PREFERRED_SIZE)
+					.addComponent(searchingScrollPane, GroupLayout.PREFERRED_SIZE, 124, GroupLayout.PREFERRED_SIZE)
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
 						.addComponent(newSearchingConfigBtn)
@@ -250,7 +279,7 @@ public class StartWindow extends JFrame {
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addComponent(crawlingLabel)
 					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(crawlingList, GroupLayout.PREFERRED_SIZE, 124, GroupLayout.PREFERRED_SIZE)
+					.addComponent(crawlingScrollPane, GroupLayout.PREFERRED_SIZE, 124, GroupLayout.PREFERRED_SIZE)
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
 						.addComponent(addCrawlingConfigButton)

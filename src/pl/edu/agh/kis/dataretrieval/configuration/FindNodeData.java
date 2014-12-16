@@ -6,7 +6,7 @@ import java.util.LinkedList;
 
 import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingData;
 
-public class FindNodeData {
+public class FindNodeData implements ConfigData{
 	protected String benchmark;
 	protected String benchmarkType;
 	protected String benchmarkAttr;
