@@ -131,7 +131,14 @@ public class SiteRetriever implements Runnable{
 				for (Entry<String, FormFieldData> entry: switchData.getRefFields().entrySet()){
 					caseData.addValue(entry.getKey(), entry.getValue().getValues());
 				}
-				List<WebResponse> sites = goThroughtFlow(switchData.getFlowData(caseData), maxRecords, crawledSites);
+				List<ConfigData> flowData = switchData.getFlowData(caseData);
+				if (flowData == null){
+					flowData = switchData.getFlowData(CaseData.getDefaultCaseData());
+					if (flowData == null){
+						throw new RetrievalException("There is no case for given values");
+					}
+				}
+				List<WebResponse> sites = goThroughtFlow(flowData, maxRecords, crawledSites);
 				if (!sites.isEmpty()){
 					return sites;
 				}

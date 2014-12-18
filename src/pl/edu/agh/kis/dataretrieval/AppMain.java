@@ -9,7 +9,7 @@ public class AppMain {
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
-		if (args.length > 0){
+		if (args.length == 0){
 			new Thread(){
 				public void run(){
 					StartWindow startWindow = new StartWindow();
@@ -20,7 +20,7 @@ public class AppMain {
 			if (args.length != 2){
 				System.out.println("Wrong usage of application\n"
 						+ "To run window mode run application without arguments\n"
-						+ "To run console mode run application with two arkuments:\n"
+						+ "To run console mode run application with two arguments:\n"
 						+ "	-searching configuration path\n"
 						+ "	-crawling configuration path");
 			}else{

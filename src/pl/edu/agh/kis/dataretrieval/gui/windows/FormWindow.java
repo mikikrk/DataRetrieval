@@ -32,8 +32,9 @@ public class FormWindow extends JFrame {
 
 	/**
 	 * Create the frame.
+	 * @throws RetrievalException 
 	 */
-	public FormWindow(List<FormFieldData> fields) {
+	public FormWindow(List<FormFieldData> fields) throws RetrievalException {
 		this.fields = fields;
 		setLayout(new GridLayout(getRowsAmount(), 1));
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -52,7 +53,7 @@ public class FormWindow extends JFrame {
 		add(btnNewButton);
 	}
 	
-	private void addForms(List<FormFieldData> fields){
+	private void addForms(List<FormFieldData> fields) throws RetrievalException{
 		for(FormFieldData field: fields){
 			if(!field.getDescription().isEmpty()){
 				JLabel label = new JLabel(field.getDescription());
@@ -74,7 +75,7 @@ public class FormWindow extends JFrame {
 					if (defaultValues.size() == 1){
 						String value = defaultValues.get(0);
 						if (field.getOptionsDescriptions().contains(value) || field.getOptions().contains(value)){
-							combo.setSelectedItem(value, false);
+							combo.setSelectedItem(value);
 						}else{
 							throw new RetrievalException("Default value \'" + value + "\' is invalid");
 						}
@@ -154,6 +155,11 @@ public class FormWindow extends JFrame {
 				ButtonGroup bg = new ButtonGroup();
 				List<String> options = field.getOptions();
 				List<String> optionsDescriptions = field.getOptionsDescriptions();
+				
+				List<String> defaultValues = field.getDefaultValues();
+				if (defaultValues.size() > 1){
+					throw new RetrievalException("Multiple default values are invalid for radio button");
+				}
 				for (int i=0; i < options.size(); i++){
 					JRadioButton radio = new JRadioButton();
 					radio.setEnabled(true);
@@ -162,8 +168,12 @@ public class FormWindow extends JFrame {
 					}else{
 						radio.setText(options.get(i));
 					}
-					if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty() && field.getDefaultValue().equalsIgnoreCase(radio.getText())){
-						radio.setSelected(true);
+						
+					if (!field.getDefaultValues().isEmpty()){
+						String value = defaultValues.get(0);
+						if (value.equals(options.get(i)) || value.equals(optionsDescriptions.get(i))){
+							radio.setSelected(true);
+						}
 					}
 					if (i == 0){
 						add(radio, true);
@@ -175,15 +185,35 @@ public class FormWindow extends JFrame {
 				}
 			}else if (field.getFieldType() != null && field.getFieldType().equals(FieldType.TEXT)){
 				JTextField textField = new JTextField();
-				if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()){
-					textField.setText(field.getDefaultValue());
+				if (!field.getDefaultValues().isEmpty()){
+					List<String> defaultValues = field.getDefaultValues();
+					if (defaultValues.size() == 1){
+						String value = defaultValues.get(0);
+						if (field.getOptionsDescriptions().contains(value) || field.getOptions().contains(value)){
+							textField.setText(value);
+						}else{
+							throw new RetrievalException("Default value \'" + value + "\' is invalid");
+						}
+					}else{
+						throw new RetrievalException("Multiple default values are invalid for single selection list");
+					}
 				}
 				add(textField);
 				field.setComponent(textField);
 			}else if (field.getFieldType() != null && field.getFieldType().equals(FieldType.TEXTAREA)){
 				JTextArea textArea = new JTextArea();
-				if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()){
-					textArea.setText(field.getDefaultValue());
+				if (!field.getDefaultValues().isEmpty()){
+					List<String> defaultValues = field.getDefaultValues();
+					if (defaultValues.size() == 1){
+						String value = defaultValues.get(0);
+						if (field.getOptionsDescriptions().contains(value) || field.getOptions().contains(value)){
+							textArea.setText(value);
+						}else{
+							throw new RetrievalException("Default value \'" + value + "\' is invalid");
+						}
+					}else{
+						throw new RetrievalException("Multiple default values are invalid for single selection list");
+					}
 				}
 				add(textArea);
 				field.setComponent(textArea);

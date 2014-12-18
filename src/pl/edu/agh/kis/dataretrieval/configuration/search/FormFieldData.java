@@ -16,7 +16,7 @@ public class FormFieldData {
 	private String fieldName;		//nazwa pola w formularzu brana z nazwy wêz³a w pliku xml
 	private String formFieldName; //jeœli nazwy pola nie da siê ustawiæ jako wêze³ xml np. 'field[]'
 	private String description = new String();
-	private List<String> defaultValues;
+	private List<String> defaultValues = new ArrayList<String>();
 	private List<String> alternativeDefaultValues = new ArrayList<String>();
 	private List<String> optionsDescriptions = new ArrayList<String>();
 	

@@ -4,7 +4,7 @@
 	<form name="limits" buttonName="Submit" as="first">
 		<edition options="JCR Science Edition;JCR Social Sciences Edition"/>
 		<science_year>JCR Science Edition Year</science_year>
-		<social_year value="2009">JCR Social Sciences Edition Year</social_year>
+		<social_year values="2009">JCR Social Sciences Edition Year</social_year>
 		<RQ options="View a group of journals by;Search for a specific journal;View all journals"/>
 		<view>View a group of journals by options:</view>
 	</form>
@@ -41,7 +41,7 @@
 			<content ref="abbreviated"/>
 		</case>
 		<case values1="View all journals">
-				<content ref="abbreviated"/>
+			<content ref="abbreviated"/>
 		</case>
 	</switch>
 	

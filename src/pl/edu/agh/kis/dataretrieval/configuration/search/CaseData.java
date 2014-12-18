@@ -8,11 +8,22 @@ import java.util.Map.Entry;
 public class CaseData {
 	
 	private Map<String, List<String>> values = new HashMap<String, List<String>>();
+	private boolean defaultCase = false;
+	
+	public static CaseData getDefaultCaseData(){
+		CaseData caseData = new CaseData();
+		caseData.setDefaultCase(true);
+		return caseData;
+	}
 	
 	@Override
 	public boolean equals(Object obj) {
 		if(obj instanceof CaseData){
-			return compareValues(((CaseData) obj).getValues());
+			if (defaultCase == true && ((CaseData) obj).isDefaultCase() == true){
+				return true;
+			}else{
+				return compareValues(((CaseData) obj).getValues());
+			}
 		}else{
 			return false;
 		}
@@ -86,6 +97,16 @@ public class CaseData {
 	}
 	public void addValue(String fieldRef, List<String> fieldValues){
 		values.put(fieldRef, fieldValues);
+	}
+
+
+	public boolean isDefaultCase() {
+		return defaultCase;
+	}
+
+
+	public void setDefaultCase(boolean defaultCase) {
+		this.defaultCase = defaultCase;
 	}
 	
 }

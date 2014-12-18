@@ -84,7 +84,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		
 		for (int i = 0; i < switchAttrs.getLength(); i++){
 			String refValue = switchAttrs.item(i).getNodeValue();
-			String[] ref = refValue.split(".");
+			String[] ref = refValue.split("\\.");
 			
 			String strFieldNb = switchAttrs.item(i).getNodeName().replace("field",  "");
 			Integer fieldNb = strFieldNb.trim().isEmpty() ? 0 : Integer.valueOf(strFieldNb); 
@@ -101,7 +101,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		Node caseNode = switchNode.getFirstChild();
 		while (caseNode != null) {
 			switchData.addCases(loadCaseNode(caseNode, fieldRefs));
-			caseNode.getNextSibling();
+			caseNode = caseNode.getNextSibling();
 		}
 		return switchData;
 	}
@@ -109,16 +109,21 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 	private Map<CaseData, List<ConfigData>> loadCaseNode(Node caseNode, Map<Integer, String> fieldRefs){
 		NamedNodeMap caseAttrs = caseNode.getAttributes();
 		Map<CaseData, List<ConfigData>> caseFlowData = new HashMap<CaseData, List<ConfigData>>();
-		CaseData caseData = new CaseData();
+		CaseData caseData;
 		
-		for (int i = 0; i < caseAttrs.getLength(); i++){
-			String values = caseAttrs.item(i).getNodeValue();
-			
-			String strValuesNb = caseAttrs.item(i).getNodeName().replace("values",  "");
-			Integer valuesNb = strValuesNb.trim().isEmpty() ? 0 : Integer.valueOf(strValuesNb);
-			
-			String refField = fieldRefs.get(valuesNb);
-			caseData.addValue(refField, Arrays.asList(values.split(";")));
+		if (caseNode.getNodeName().equals("case")){
+			caseData = new CaseData();
+			for (int i = 0; i < caseAttrs.getLength(); i++){
+				String values = caseAttrs.item(i).getNodeValue();
+				
+				String strValuesNb = caseAttrs.item(i).getNodeName().replace("values",  "");
+				Integer valuesNb = strValuesNb.trim().isEmpty() ? 0 : Integer.valueOf(strValuesNb);
+				
+				String refField = fieldRefs.get(valuesNb);
+				caseData.addValue(refField, Arrays.asList(values.split(";")));
+			}
+		}else{
+			caseData = CaseData.getDefaultCaseData();
 		}
 		
 		List<ConfigData> flowDataList = new LinkedList<ConfigData>();
@@ -201,11 +206,11 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		}
 		if (fieldAttrs.getNamedItem("values") != null) {
 			fieldData.addDefaultValues(Arrays.asList(fieldAttrs.getNamedItem("values")
-					.getNodeValue().split("|")));
+					.getNodeValue().split("\\|")));
 		}
 		if (fieldAttrs.getNamedItem("usedValues") != null) {
 			fieldData.addUsedValues(Arrays.asList(fieldAttrs
-					.getNamedItem("usedValues").getNodeValue().split("|")));
+					.getNamedItem("usedValues").getNodeValue().split("\\|")));
 		}
 		if (fieldNode.hasChildNodes()) {
 			fieldData.setDescription(fieldNode.getFirstChild().getNodeValue());
@@ -287,8 +292,6 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		Node urlNode = dom.getFirstChild();
 		StringBuilder message = new StringBuilder();
 
-		removeEmptyNodes(urlNode);
-
 		parseUrlNode(urlNode, message);
 
 		Node node = urlNode.getFirstChild();
@@ -314,9 +317,8 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			}
 		} else if (node.getNodeName().equals("switch")) {
 			parseSwitchNode(node, message);
-			parseFlowNode(node.getFirstChild(), message);
 		} else {
-			message.append("Wrong node name of\'" + node.getNodeName() + "\'\n");
+			message.append("Wrong flow node name: \'" + node.getNodeName() + "\'\n");
 		}
 	}
 	
@@ -332,7 +334,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			NamedNodeMap attrs = urlNode.getAttributes();
 			for (int i = 0; i < attrs.getLength(); i++) {
 				if (!attrs.item(i).getNodeName().equals("address")
-						&& !attrs.item(i).getNodeName().equals("bulkRecords")
+						&& !attrs.item(i).getNodeName().equals("maxRecords")
 						&& !attrs.item(i).getNodeName().equals("crawledSites")) {
 					message.append("Wrong attribute \'"
 							+ attrs.item(i).getNodeName()
@@ -346,7 +348,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			message.append("Max records must be an integer\n");
 		}
 		if (urlNode.getAttributes().getNamedItem("crawledSites") != null
-				&& !urlNode.getAttributes().getNamedItem("bulkRecords")
+				&& !urlNode.getAttributes().getNamedItem("crawledSites")
 						.getNodeValue().matches("\\d+")) {
 			message.append("Crawled sites must be an integer\n");
 		}
@@ -413,17 +415,16 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			if (attrs.getNamedItem("as") != null) {
 				variable = true;
 				name = "form" + attrs.getNamedItem("as").getNodeValue();
-				references.put(
-						name,
-						new LinkedList<String>());
+				references.put(name, new LinkedList<String>());
 			}
 
 			Node fieldNode = node.getFirstChild();
 			while (fieldNode != null){
 				if (variable){
-					references.get("form" + name).add(fieldNode.getNodeName());
+					references.get(name).add(fieldNode.getNodeName());
 				}
 				parseFieldNode(fieldNode, message);
+				fieldNode = fieldNode.getNextSibling();
 			}
 		} else {
 			String refValue = attrs.getNamedItem("ref").getNodeValue();
@@ -455,28 +456,6 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 				if (!fieldAttrs.item(i).getNodeValue().matches(".+(;.+)*")) {
 					message.append("Wrong options value in \'"
 							+ fieldNode.getNodeName() + "\'\n");
-				} else {
-					if (fieldAttrs.getNamedItem("value") != null) {
-						List<String> options = Arrays.asList(fieldAttrs.item(i)
-								.getNodeValue().split(";"));
-						if (!options.contains(fieldAttrs.getNamedItem("value"))) {
-							message.append("Wrong \'value\' value in \'"
-									+ fieldNode.getNodeName() + "\'\n");
-						}
-					}
-					if (fieldAttrs.getNamedItem("usedValues") != null) {
-						List<String> options = Arrays.asList(fieldAttrs.item(i)
-								.getNodeValue().split(","));
-						List<String> usedValues = Arrays.asList(fieldAttrs
-								.getNamedItem("usedValues").getNodeValue()
-								.split(";"));
-						for (String usedValue : usedValues) {
-							if (!options.contains(usedValue)) {
-								message.append("Wrong \'usedValues\' value in \'"
-										+ fieldNode.getNodeName() + "\'\n");
-							}
-						}
-					}
 				}
 			} else if (fieldAttrs.item(i).getNodeName().equals("values")) {
 				if (fieldAttrs.item(i).getNodeValue().matches("((.+#every#) | (#every#.+) | (.+#all#) | (#all#.+))")) {
@@ -487,7 +466,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 					&& !fieldAttrs.item(i).getNodeName().equals("name")) {
 				message.append("Wrong attribute \'"
 						+ fieldAttrs.item(i).getNodeName()
-						+ "\' in node \'form\'\n");
+						+ "\' in node \'" + fieldNode + "\'\n");
 			}
 			if (fieldNode.hasChildNodes()) {
 				if (fieldNode.getChildNodes().getLength() != 1
@@ -522,16 +501,16 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 				parseLinkNode(node, message);
 			}
 			
-			Node n = node;
+			node = contentNode;
 			do{
-				if (n.getNextSibling() != null){
-					message.append("Content node cannot be followed by another nodes");
+				if (node.getNextSibling() != null){
+					message.append("Content node cannot be followed by another nodes\n");
 				}
-				n = n.getParentNode();
-				if (!n.getNodeName().equals("url")){
-					n = n.getParentNode();
+				node = node.getParentNode();
+				if (!node.getNodeName().equals("url")){
+					node = node.getParentNode();
 				}
-			}while(!n.getNodeName().equals("url"));
+			}while(!node.getNodeName().equals("url"));
 		}else {
 			String refValue = attrs.getNamedItem("ref").getNodeValue();
 			if (attrs.getLength() != 1) {
@@ -689,7 +668,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 						+ attrs.item(i).getNodeName()
 						+ "\' in node \'switch\'\n");
 			}
-			String[] value = attrs.item(i).getNodeValue().split(".");
+			String[] value = attrs.item(i).getNodeValue().split("\\.");
 			if (value.length != 2) {
 				message.append("Wrong value of attribute \'"
 						+ attrs.item(i).getNodeName()
@@ -721,23 +700,37 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 	}
 
 	private void parseCaseNode(Node node, StringBuilder message, List<Integer> fieldNbs) {
-		NamedNodeMap attrs = node.getAttributes();
-		if (attrs.getLength() == 0) {
-			message.append("Missing values attributes in \'case\' node\n");
-		}
-		List<Integer> valuesNbs = new LinkedList<Integer>();
-		for (int i = 0; i < attrs.getLength(); i++) {
-			if (!attrs.item(i).getNodeName().matches("values\\d*")) {
-				message.append("Wrong attribute \'"
-						+ attrs.item(i).getNodeName() + "\' in node \'case\'\n");
+		if (!node.getNodeName().equals("case") && !node.getNodeName().equals("default")){
+			message.append("Unexpected node name: \'" + node.getNodeName() + "\' in switch\n");
+		}else{
+			if (node.getNodeName().equals("case")){
+				NamedNodeMap attrs = node.getAttributes();
+				if (attrs.getLength() == 0) {
+					message.append("Missing values attributes in \'case\' node\n");
+				}
+				List<Integer> valuesNbs = new LinkedList<Integer>();
+				for (int i = 0; i < attrs.getLength(); i++) {
+					if (!attrs.item(i).getNodeName().matches("values\\d*")) {
+						message.append("Wrong attribute \'"
+								+ attrs.item(i).getNodeName() + "\' in node \'case\'\n");
+					}
+					String strValuesNb = attrs.item(i).getNodeName().replace("values",  "");
+					Integer valuesNb = strValuesNb.trim().isEmpty() ? 0 : Integer.valueOf(strValuesNb);
+					valuesNbs.add(valuesNb);
+					if (!fieldNbs.contains(valuesNb)){
+						message.append("There is no field matching to \'values" + valuesNb + "\'\n");
+					}
+				}
 			}
-			String strValuesNb = attrs.item(i).getNodeName().replace("field",  "");
-			Integer valuesNb = strValuesNb.trim().isEmpty() ? 0 : Integer.valueOf(strValuesNb);
-			valuesNbs.add(valuesNb);
-			if (fieldNbs.contains(valuesNb)){
-				message.append("There is no field matching to \'values" + valuesNb + "\'\n");
+			if (node.hasChildNodes()){
+				Node flowNode = node.getFirstChild();
+				while (flowNode != null){
+					parseFlowNode(flowNode, message);
+					flowNode = flowNode.getNextSibling();
+				}
+			}else{
+				message.append("Node \'" + node.getNodeName() + "\' has no child nodes");
 			}
 		}
-		parseFlowNode(node, message);
 	}
 }

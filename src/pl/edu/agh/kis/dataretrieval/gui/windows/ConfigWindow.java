@@ -77,7 +77,7 @@ public class ConfigWindow extends JFrame {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		
-		JLabel configNameLbl = new JLabel("Nazwa konfiguracji");
+		JLabel configNameLbl = new JLabel("Configuration's name");
 		
 		configNamePane = new JTextPane();
 		
@@ -85,22 +85,22 @@ public class ConfigWindow extends JFrame {
 		
 		configScroll = new JScrollPane(configXml);
 		
-		JLabel lblNewLabel = new JLabel("Konfiguracja");
+		JLabel lblNewLabel = new JLabel("Configuration");
 		
-		JButton returnBtn = new JButton("Powrot");
+		JButton returnBtn = new JButton("Return");
 		returnBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				closeWindow();
 			}
 		});
 		
-		JButton saveAsBtn = new JButton("Zapisz jako");
+		JButton saveAsBtn = new JButton("Save as");
 		setSaveAsButtonActionPerformer(saveAsBtn);
 		
-		JButton parseBtn = new JButton("Parsuj");
+		JButton parseBtn = new JButton("Parse");
 		setParseButtonActionPerformer(parseBtn);
 		
-		JButton saveBtn = new JButton("Zapisz");
+		JButton saveBtn = new JButton("Save");
 		setSaveButtonActionPerformer(saveBtn);
 		
 		GroupLayout gl_contentPane = new GroupLayout(contentPane);

@@ -45,7 +45,7 @@ public class SearchingData {
 	}
 	
 	public void addFlowData(ConfigData flowData){
-		if (flowData instanceof LinkData || flowData instanceof FormData){
+		if (flowData instanceof LinkData || flowData instanceof FormData || flowData instanceof SwitchData || flowData instanceof ContentData){
 			flowDataList.add(flowData);
 		}else{
 			throw new IllegalArgumentException();
