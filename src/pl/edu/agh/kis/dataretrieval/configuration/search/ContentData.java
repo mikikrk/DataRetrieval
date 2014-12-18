@@ -9,17 +9,6 @@ public class ContentData extends FindNodeData{
 
 	private LinkData nextPageLink;
 	
-	private Integer crawledSites;
-	
-
-	public Integer getCrawledSites() {
-		return crawledSites;
-	}
-
-	public void setCrawledSites(Integer crawledSites) {
-		this.crawledSites = crawledSites;
-	}
-
 	public Integer getBenchmarkNo() {
 		return benchmarkNo;
 	}

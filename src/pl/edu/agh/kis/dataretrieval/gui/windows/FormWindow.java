@@ -21,6 +21,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
+import pl.edu.agh.kis.dataretrieval.RetrievalException;
 import pl.edu.agh.kis.dataretrieval.configuration.search.FormFieldData;
 import pl.edu.agh.kis.dataretrieval.configuration.search.FormFieldData.FieldType;
 
@@ -68,8 +69,18 @@ public class FormWindow extends JFrame {
 						combo.addItem(options.get(i));
 					}
 				}
-				if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()){
-					combo.setSelectedItem(field.getDefaultValue());
+				if (!field.getDefaultValues().isEmpty()){
+					List<String> defaultValues = field.getDefaultValues();
+					if (defaultValues.size() == 1){
+						String value = defaultValues.get(0);
+						if (field.getOptionsDescriptions().contains(value) || field.getOptions().contains(value)){
+							combo.setSelectedItem(value, false);
+						}else{
+							throw new RetrievalException("Default value \'" + value + "\' is invalid");
+						}
+					}else{
+						throw new RetrievalException("Multiple default values are invalid for combo box");
+					}
 				}
 				add(combo);
 				field.setComponent(combo);
@@ -84,8 +95,18 @@ public class FormWindow extends JFrame {
 				}
 				list.setListData(options);
 				list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-				if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()){
-					list.setSelectedValue(field.getDefaultValue(), true);
+				if (!field.getDefaultValues().isEmpty()){
+					List<String> defaultValues = field.getDefaultValues();
+					if (defaultValues.size() == 1){
+						String value = defaultValues.get(0);
+						if (field.getOptionsDescriptions().contains(value) || field.getOptions().contains(value)){
+							list.setSelectedValue(value, false);
+						}else{
+							throw new RetrievalException("Default value \'" + value + "\' is invalid");
+						}
+					}else{
+						throw new RetrievalException("Multiple default values are invalid for single selection list");
+					}
 				}
 				JScrollPane jsp = new JScrollPane(list);
 				add(jsp);
@@ -99,9 +120,13 @@ public class FormWindow extends JFrame {
 				}else{
 					options = field.getOptionsDescriptions().toArray(new String[]{});
 				}
-				if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()){
-					for (String value: field.getDefaultValue().split(";")){
-						list.setSelectedValue(value, false);
+				if (!field.getDefaultValues().isEmpty()){
+					for (String value: field.getDefaultValues()){
+						if (field.getOptionsDescriptions().contains(value) || field.getOptions().contains(value)){
+							list.setSelectedValue(value, false);
+						}else{
+							throw new RetrievalException("Default value \'" + value + "\' is invalid");
+						}
 					}
 				}
 				list.setListData(options);
@@ -119,7 +144,7 @@ public class FormWindow extends JFrame {
 					}else{
 						checkbox.setText(options.get(i));
 					}
-					if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty() && Arrays.asList(field.getDefaultValue().split(";")).contains(checkbox.getText())){
+					if (!field.getDefaultValues().isEmpty() && (field.getDefaultValues().contains(optionsDescriptions.get(i)) || field.getDefaultValues().contains(options.get(i)))){
 						checkbox.setSelected(true);
 					}
 					add(checkbox);

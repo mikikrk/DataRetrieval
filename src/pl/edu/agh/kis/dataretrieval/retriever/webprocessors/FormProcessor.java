@@ -35,6 +35,7 @@ public class FormProcessor {
 		for (FormFieldData fieldData: formData.getFields()){
 			loadField(fieldData, form);
 		}
+		setDefaultValues(formData.getFields());
 	}
 	
 	private WebForm getWebForm(FormData formData, WebResponse resp) throws SAXException, RetrievalException{
@@ -104,6 +105,10 @@ public class FormProcessor {
 		}
 	}
 	
+	private void setDefaultValues(List<FormFieldData> fieldDataList){
+		
+	}
+	
 	public WebResponse submitForm(FormData formData) throws RetrievalException{
 		WebForm form = formData.getWebForm();
 		for (FormFieldData fieldData: formData.getFields()){
@@ -153,30 +158,50 @@ public class FormProcessor {
 				JCheckBox jCheckbox = (JCheckBox) jForms.get(i);
 				if (jCheckbox.isSelected()){
 					formParameter.toggleCheckbox(fieldData.getOptions().get(i));
+					if (fieldData.getOptionsDescriptions().isEmpty()){
+						fieldData.addValue(fieldData.getOptions().get(i));
+					}else{
+						fieldData.addValue(fieldData.getOptionsDescriptions().get(i));
+					}
 				}
 			}
 		}else if(fieldData.getFieldType().equals(FormFieldData.FieldType.COMBOBOX)){
 			JComboBox<String> jComboBox = (JComboBox<String>) jForms.get(0);
-			form.setParameter(fieldData.getFieldName(), (String) jComboBox.getSelectedItem());
+			String selectedValue = (String) jComboBox.getSelectedItem();
+			form.setParameter(fieldData.getFieldName(), selectedValue);
+			fieldData.addValue(selectedValue);
 		}else if(fieldData.getFieldType().equals(FormFieldData.FieldType.RADIO)){
 			for (int i = 0; i < jForms.size(); i++){
 				JRadioButton jRadioBtn = (JRadioButton) jForms.get(i);
 				if (jRadioBtn.isSelected()){
-					form.setParameter(fieldData.getFieldName(), fieldData.getOptions().get(i));;
+					form.setParameter(fieldData.getFieldName(), fieldData.getOptions().get(i));
+					if (fieldData.getOptionsDescriptions().isEmpty()){
+						fieldData.addValue(fieldData.getOptions().get(i));
+					}else{
+						fieldData.addValue(fieldData.getOptionsDescriptions().get(i));
+					}
 				}
 			}
 		}else if(fieldData.getFieldType().equals(FormFieldData.FieldType.SELECT_ONE)){
 			JList<String> jList = (JList<String>) jForms.get(0);
-			form.setParameter(fieldData.getFieldName(), jList.getSelectedValue());
+			String selectedValue = jList.getSelectedValue();
+			form.setParameter(fieldData.getFieldName(), selectedValue);
+			fieldData.addValue(selectedValue);
 		}else if(fieldData.getFieldType().equals(FormFieldData.FieldType.SELECT_MULTIPLE)){
 			JList<String> jList = (JList<String>) jForms.get(0);
-			form.setParameter(fieldData.getFieldName(), jList.getSelectedValuesList().toArray(new String[]{}));
+			List<String> selectedValues = jList.getSelectedValuesList();
+			form.setParameter(fieldData.getFieldName(), selectedValues.toArray(new String[]{}));
+			fieldData.addValues(jList.getSelectedValuesList());
 		}else if(fieldData.getFieldType().equals(FormFieldData.FieldType.TEXT)){
 			JTextField jTextField = (JTextField) jForms.get(0);
-			form.setParameter(fieldData.getFieldName(), (String) jTextField.getText());
+			String value = (String) jTextField.getText();
+			form.setParameter(fieldData.getFieldName(), value);
+			fieldData.addValue(value);
 		}else if(fieldData.getFieldType().equals(FormFieldData.FieldType.TEXTAREA)){
 			JTextArea jTextArea = (JTextArea) jForms.get(0);
+			String value = (String) jTextArea.getText();
 			form.setParameter(fieldData.getFieldName(), (String) jTextArea.getText());
+			fieldData.addValue(value);
 		}
 	}
 }

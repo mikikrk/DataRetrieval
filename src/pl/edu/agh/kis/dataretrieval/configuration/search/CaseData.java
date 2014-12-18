@@ -7,8 +7,8 @@ import java.util.Map.Entry;
 
 public class CaseData {
 	
-	private Map<String, List<String>> values;
-
+	private Map<String, List<String>> values = new HashMap<String, List<String>>();
+	
 	@Override
 	public boolean equals(Object obj) {
 		if(obj instanceof CaseData){
@@ -83,6 +83,9 @@ public class CaseData {
 		}else{
 			throw new IllegalArgumentException();
 		}
+	}
+	public void addValue(String fieldRef, List<String> fieldValues){
+		values.put(fieldRef, fieldValues);
 	}
 	
 }

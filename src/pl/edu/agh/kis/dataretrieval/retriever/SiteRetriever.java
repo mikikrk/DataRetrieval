@@ -2,6 +2,7 @@ package pl.edu.agh.kis.dataretrieval.retriever;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -12,12 +13,17 @@ import org.w3c.dom.DOMException;
 import org.xml.sax.SAXException;
 
 import pl.edu.agh.kis.dataretrieval.RetrievalException;
+import pl.edu.agh.kis.dataretrieval.configuration.ConfigData;
 import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingConfigurationReader;
 import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingData;
+import pl.edu.agh.kis.dataretrieval.configuration.search.CaseData;
+import pl.edu.agh.kis.dataretrieval.configuration.search.ContentData;
 import pl.edu.agh.kis.dataretrieval.configuration.search.FormData;
+import pl.edu.agh.kis.dataretrieval.configuration.search.FormFieldData;
 import pl.edu.agh.kis.dataretrieval.configuration.search.LinkData;
 import pl.edu.agh.kis.dataretrieval.configuration.search.SearchingConfigurationReader;
 import pl.edu.agh.kis.dataretrieval.configuration.search.SearchingData;
+import pl.edu.agh.kis.dataretrieval.configuration.search.SwitchData;
 import pl.edu.agh.kis.dataretrieval.database.CrawlerDao;
 import pl.edu.agh.kis.dataretrieval.database.DbFieldData;
 import pl.edu.agh.kis.dataretrieval.gui.windows.FormWindow;
@@ -39,34 +45,23 @@ public class SiteRetriever implements Runnable{
 	
 	private String searchingConfigPath;
 	private String crawlingConfigPath;
+	private boolean windowMode;
 	
-	public SiteRetriever(String searchingConfigPath, String crawlingConfigPath) {
+	public SiteRetriever(String searchingConfigPath, String crawlingConfigPath, boolean windowMode, boolean bulkMode) {
 		this.searchingConfigPath = searchingConfigPath;
 		this.crawlingConfigPath = crawlingConfigPath;
+		this.windowMode = windowMode;
 	}
 
 	public void run() {
+		String dialogMessage;
 		try{
 			SearchingConfigurationReader searchConfigReader = new SearchingConfigurationReader();
 			
 			SearchingData searchingData = searchConfigReader.load(searchingConfigPath);
 			resp = webConv.getResponse(searchingData.getUrl());
+			List<WebResponse> sites = goThroughtFlow(searchingData.getFlowDataList(), searchingData.getMaxRecords(), searchingData.getCrawledSites());
 			
-			while (searchingData.hasNextFlowData()){
-				Object flowDataObj = searchingData.nextFlowData();
-				if (flowDataObj instanceof LinkData){
-					LinkData linkData = (LinkData) flowDataObj;
-					resp = LinkProcessor.goTo(resp, linkData);
-				}else if (flowDataObj instanceof FormData){
-					FormData formData = (FormData) flowDataObj;
-					formProcessor.loadForm(formData, resp);
-					FormWindow formWindow = new FormWindow(formData.getFields());
-					formWindow.setVisible(true);
-					formWindow.waitForSubmit();
-					resp = formProcessor.submitForm(formData);
-				}
-			}
-			List<WebResponse> sites = ContentProcessor.findSites(resp, searchingData.getContentFinder(), searchingData.getBulkRecords());
 			CrawlingConfigurationReader crawlingConfigReader = new CrawlingConfigurationReader();
 			List<CrawlingData> crawlingDataList = crawlingConfigReader.load(crawlingConfigPath);
 			CrawlerDao dao = new CrawlerDao();
@@ -83,34 +78,69 @@ public class SiteRetriever implements Runnable{
 				    dao.addSiteData(entry.getKey(), entry.getValue());
 				}
 			}
+			
 			dao.closeConnection();
-			PopUpDialog errorDialog = new PopUpDialog("All data has been succesfully downloaded to database");
-			errorDialog.setVisible(true);
+			dialogMessage = "All data has been succesfully downloaded to database";
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			dialogMessage = "IO error occured: " + e.getMessage();
 		} catch (SAXException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			dialogMessage = "Error occured while parsing x(ht)ml:\n " + e.getMessage();
 		} catch (RetrievalException e) {
-			PopUpDialog errorDialog = new PopUpDialog(e.getMessage());
-			errorDialog.setVisible(true);
+			dialogMessage = e.getMessage();
 		} catch (XPathExpressionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			dialogMessage = "Error in XPath expression" + e.getMessage();
 		} catch (DOMException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			dialogMessage = "Error while converting x(ht)ml to DOM\n" + e.getMessage();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			dialogMessage = "Database error: \n" + e.getMessage();
 		}
-		new Thread(){
-			public void run(){
-				StartWindow startWindow = new StartWindow();
-				startWindow.setVisible(true);
-			}
-		}.start();
+		if (windowMode){
+			PopUpDialog successDialog = new PopUpDialog(dialogMessage);
+			successDialog.setVisible(true);
+
+			new Thread(){
+				public void run(){
+					StartWindow startWindow = new StartWindow();
+					startWindow.setVisible(true);
+				}
+			}.start();
+		}else{
+			System.out.println(dialogMessage);
+		}
+	}
+	
+	private List<WebResponse> goThroughtFlow(List<ConfigData> flowDataList, Integer maxRecords, Integer crawledSites) throws IOException, SAXException, RetrievalException, XPathExpressionException, DOMException{
+		for (ConfigData flowDataObj: flowDataList){
+			if (flowDataObj instanceof LinkData){
+				LinkData linkData = (LinkData) flowDataObj;
+				resp = LinkProcessor.goTo(resp, linkData);
+			} else if (flowDataObj instanceof FormData){
+				FormData formData = (FormData) flowDataObj;
+				formProcessor.loadForm(formData, resp);
+				FormWindow formWindow = new FormWindow(formData.getFields());
+				if (windowMode){
+					formWindow.setVisible(true);
+					formWindow.waitForSubmit();
+				}else{
+					formWindow.dispose();
+				}
+				resp = formProcessor.submitForm(formData);
+			} else if (flowDataObj instanceof SwitchData){
+				SwitchData switchData = (SwitchData) flowDataObj;
+				CaseData caseData = new CaseData();
+				for (Entry<String, FormFieldData> entry: switchData.getRefFields().entrySet()){
+					caseData.addValue(entry.getKey(), entry.getValue().getValues());
+				}
+				List<WebResponse> sites = goThroughtFlow(switchData.getFlowData(caseData), maxRecords, crawledSites);
+				if (!sites.isEmpty()){
+					return sites;
+				}
+			} else if(flowDataObj instanceof ContentData){
+				ContentData contentData = (ContentData) flowDataObj;
+				return ContentProcessor.findSites(resp, contentData, maxRecords, crawledSites + 1);
+			} 
+		}
+		return new LinkedList<WebResponse>();
 	}
 	
 	

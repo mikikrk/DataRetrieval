@@ -30,11 +30,10 @@ import com.meterware.httpunit.WebResponse;
 
 public class ContentProcessor {
 	
-	public static List<WebResponse> findSites(WebResponse mainPageResp, ContentData contentData, Integer maxAmount) throws SAXException, XPathExpressionException, IOException, DOMException, RetrievalException{
+	public static List<WebResponse> findSites(WebResponse mainPageResp, ContentData contentData, Integer maxAmount, Integer startLink) throws SAXException, XPathExpressionException, IOException, DOMException, RetrievalException{
 		List<WebResponse> sites = new ArrayList<WebResponse>();
 		String expression = RetrievalHelper.getXpathExpression(contentData);
 		
-		Integer startLink = contentData.getCrawledSites();
 		boolean allRetrieved = false;
 		
 		while(maxAmount != 0 || !allRetrieved){
@@ -45,7 +44,7 @@ public class ContentProcessor {
 					maxAmount -= sitesFromOneSite.size();
 				}
 			}catch(NoSiteRetrievedException e){
-				if (startLink > 0){
+				if (startLink >= 1){
 					startLink -= e.getLinkCount();
 				}else{
 					throw new RetrievalException("No link has been found");
@@ -80,21 +79,21 @@ public class ContentProcessor {
 		if (entry.getNode() != null){
 			boolean terminated = false;
 			while (!terminated){
-				if (linkCounter > startLink){
+				if (linkCounter >= startLink){
 					if (maxAmount != -1){
 						if (linkCounter < startLink + maxAmount){
 							sites.add(getSite(mainPageResp, entry, contentData));
 						}else{
 							terminated = true;
 						}
-					}else{
+					} else{
 						sites.add(getSite(mainPageResp, entry, contentData));
 					}
 				}
 				if (!RetrievalHelper.checkTermination(entry.getNode(), contentData)){
 					entry = RetrievalHelper.realizePath(contentData.getSearchNextNodes(), entry.getNode());
 					linkCounter++;
-				}else{
+				} else{
 					terminated = true;
 				}
 			}

@@ -3,6 +3,7 @@ package pl.edu.agh.kis.dataretrieval.configuration.search;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.meterware.httpunit.FormParameter;
@@ -15,7 +16,8 @@ public class FormFieldData {
 	private String fieldName;		//nazwa pola w formularzu brana z nazwy wêz³a w pliku xml
 	private String formFieldName; //jeœli nazwy pola nie da siê ustawiæ jako wêze³ xml np. 'field[]'
 	private String description = new String();
-	private String defaultValue;
+	private List<String> defaultValues;
+	private List<String> alternativeDefaultValues = new ArrayList<String>();
 	private List<String> optionsDescriptions = new ArrayList<String>();
 	
 //	for bulk run
@@ -31,7 +33,7 @@ public class FormFieldData {
 	private List<Component> components = new ArrayList<Component>();
 	
 //	after retrieval
-	private String value;
+	private List<String> values = new LinkedList<String>();
 	
 	public FormFieldData(){
 		super();
@@ -153,12 +155,28 @@ public class FormFieldData {
 		this.usedValues.addAll(usedValues);
 	}
 
-	public String getDefaultValue() {
-		return defaultValue;
+	public List<String> getDefaultValues() {
+		return defaultValues;
 	}
 
-	public void setDefaultValue(String defaultValue) {
-		this.defaultValue = defaultValue;
+	public void addDefaultValue(String defaultValue) {
+		this.defaultValues.add(defaultValue);
+	}
+
+	public void addDefaultValues(List<String> defaultValue) {
+		this.defaultValues.addAll(defaultValue);
+	}
+	
+	public List<String> getAlternativeDefaultValues() {
+		return alternativeDefaultValues;
+	}
+
+	public void addAlternativeDefaultValue(String defaultValue) {
+		this.alternativeDefaultValues.add(defaultValue);
+	}
+
+	public void addAlternativeDefaultValues(List<String> defaultValue) {
+		this.alternativeDefaultValues.addAll(defaultValue);
 	}
 
 	public FormParameter getFormParameter() {
@@ -181,12 +199,17 @@ public class FormFieldData {
 		this.optionsDescriptions.addAll(optionsDescriptions);
 	}
 
-	public String getValue() {
-		return value;
+	public List<String> getValues() {
+		return values;
 	}
 
-	public void setValue(String value) {
-		this.value = value;
+	public void setValues(List<String> values) {
+		this.values = values;
 	}
-	
+	public void addValue(String value) {
+		this.values.add(value);
+	}
+	public void addValues(List<String> values) {
+		this.values.addAll(values);
+	}
 }

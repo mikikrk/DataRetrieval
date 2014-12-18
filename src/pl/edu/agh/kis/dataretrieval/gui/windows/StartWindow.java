@@ -47,22 +47,6 @@ public class StartWindow extends JFrame {
 	private final StartWindow thisWindow = this;
 
 	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					StartWindow frame = new StartWindow();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
-
-	/**
 	 * Create the frame.
 	 */
 	public StartWindow() {
@@ -191,7 +175,7 @@ public class StartWindow extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				String searchingConfigPath = searchingList.getSelectedValue().getFilePath();
 				String crawlingConfigPath = crawlingList.getSelectedValue().getFilePath();
-				SiteRetriever siteSearcher = new SiteRetriever(searchingConfigPath, crawlingConfigPath);
+				SiteRetriever siteSearcher = new SiteRetriever(searchingConfigPath, crawlingConfigPath, true, false);
 				new Thread(siteSearcher).start();
 				closeWindow();
 			}

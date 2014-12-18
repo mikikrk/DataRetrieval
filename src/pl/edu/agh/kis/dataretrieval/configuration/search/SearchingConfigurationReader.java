@@ -11,11 +11,13 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import pl.edu.agh.kis.dataretrieval.RetrievalException;
+import pl.edu.agh.kis.dataretrieval.configuration.ConfigData;
 import pl.edu.agh.kis.dataretrieval.configuration.ConfigurationReader;
 
 public class SearchingConfigurationReader extends ConfigurationReader {
 
 	private Map<String, List<String>> references = new HashMap<String, List<String>>();
+	private Map<String, ConfigData> namedElements = new HashMap<String, ConfigData>();
 
 	public SearchingData load(String configFilePath) throws RetrievalException {
 		SearchingData searchingData = new SearchingData();
@@ -34,87 +36,157 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 
 		Node flowNode = urlNode.getFirstChild();
 
-		while (!flowNode.getNodeName().equals("content")) {
-			if (flowNode.getNodeName().equals("link")) {
-				loadLinkNode(flowNode, searchingData);
-			} else {
-				loadFormNode(flowNode, searchingData);
-			}
+		while (flowNode != null) {
+			searchingData.addFlowData(loadFlowNode(flowNode));
 			flowNode = flowNode.getNextSibling();
 		}
 
-		loadContentNode(flowNode, searchingData);
-
 		return searchingData;
 	}
-
+	
+	private ConfigData loadFlowNode(Node flowNode){
+		ConfigData flowData = null;
+		if (flowNode.getNodeName().equals("link")) {
+			flowData = loadLinkNode(flowNode);
+		} else if (flowNode.getNodeName().equals("form")){
+			flowData = loadFormNode(flowNode);
+		} else if (flowNode.getNodeName().equals("switch")){
+			flowData = loadSwitchNode(flowNode);
+		} else if (flowNode.getNodeName().equals("content")){
+			flowData = loadContentNode(flowNode);
+		}
+		return flowData;
+	}
+	
 	private void loadUrlNode(Node urlNode, SearchingData searchingData) {
 		NamedNodeMap urlAttrs = urlNode.getAttributes();
 		searchingData.setUrl(urlAttrs.getNamedItem("address").getNodeValue());
-		if (urlAttrs.getNamedItem("bulkRecords") != null) {
-			searchingData.setBulkRecords(Integer.valueOf(urlAttrs.getNamedItem(
-					"bulkRecords").getNodeValue()));
+		if (urlAttrs.getNamedItem("maxRecords") != null) {
+			searchingData.setMaxRecords(Integer.valueOf(urlAttrs.getNamedItem(
+					"maxRecords").getNodeValue()));
 		} else {
-			searchingData.setBulkRecords(-1);
+			searchingData.setMaxRecords(-1);
 		}
 		if (urlAttrs.getNamedItem("crawledSites") != null) {
-			searchingData.getContentFinder().setCrawledSites(
+			searchingData.setCrawledSites(
 					Integer.valueOf(urlAttrs.getNamedItem("crawledSites")
 							.getNodeValue()));
 		} else {
-			searchingData.getContentFinder().setCrawledSites(0);
+			searchingData.setCrawledSites(0);
 		}
 	}
-
-	private void loadLinkNode(Node node, SearchingData searchingData) {
-		searchingData.addFlowData(loadLinkNode(node));
+	
+	private SwitchData loadSwitchNode(Node switchNode){
+		NamedNodeMap switchAttrs = switchNode.getAttributes();
+		SwitchData switchData = new SwitchData();
+		
+		Map<Integer, String> fieldRefs = new HashMap<Integer, String>();
+		
+		for (int i = 0; i < switchAttrs.getLength(); i++){
+			String refValue = switchAttrs.item(i).getNodeValue();
+			String[] ref = refValue.split(".");
+			
+			String strFieldNb = switchAttrs.item(i).getNodeName().replace("field",  "");
+			Integer fieldNb = strFieldNb.trim().isEmpty() ? 0 : Integer.valueOf(strFieldNb); 
+			fieldRefs.put(fieldNb, refValue);
+			
+			FormData form = (FormData) namedElements.get("form" + ref[0]);
+			for (FormFieldData fieldData: form.getFields()){
+				if (fieldData.getFieldName().equals(ref[1])){
+					switchData.addRefField(refValue, fieldData);
+				}
+			}
+		}
+		
+		Node caseNode = switchNode.getFirstChild();
+		while (caseNode != null) {
+			switchData.addCases(loadCaseNode(caseNode, fieldRefs));
+			caseNode.getNextSibling();
+		}
+		return switchData;
 	}
-
-	private void loadLinkNode(Node node, ContentData contentData) {
-		contentData.setNextPageLink(loadLinkNode(node));
+	
+	private Map<CaseData, List<ConfigData>> loadCaseNode(Node caseNode, Map<Integer, String> fieldRefs){
+		NamedNodeMap caseAttrs = caseNode.getAttributes();
+		Map<CaseData, List<ConfigData>> caseFlowData = new HashMap<CaseData, List<ConfigData>>();
+		CaseData caseData = new CaseData();
+		
+		for (int i = 0; i < caseAttrs.getLength(); i++){
+			String values = caseAttrs.item(i).getNodeValue();
+			
+			String strValuesNb = caseAttrs.item(i).getNodeName().replace("values",  "");
+			Integer valuesNb = strValuesNb.trim().isEmpty() ? 0 : Integer.valueOf(strValuesNb);
+			
+			String refField = fieldRefs.get(valuesNb);
+			caseData.addValue(refField, Arrays.asList(values.split(";")));
+		}
+		
+		List<ConfigData> flowDataList = new LinkedList<ConfigData>();
+		Node flowNode = caseNode.getFirstChild();
+		while (flowNode != null){
+			flowDataList.add(loadFlowNode(flowNode));
+			flowNode = flowNode.getNextSibling();
+		}
+		
+		caseFlowData.put(caseData, flowDataList);
+		return caseFlowData;
 	}
 
 	private LinkData loadLinkNode(Node node) {
-		LinkData linkData = new LinkData();
 		NamedNodeMap linkAttrs = node.getAttributes();
-		linkData.setType(linkAttrs.getNamedItem("type").getNodeValue());
-		linkData.setBenchmark(linkAttrs.getNamedItem("value").getNodeValue());
-		return linkData;
+		if (linkAttrs.getNamedItem("ref") == null){
+			LinkData linkData = new LinkData();
+			linkData.setType(linkAttrs.getNamedItem("type").getNodeValue());
+			linkData.setBenchmark(linkAttrs.getNamedItem("value").getNodeValue());
+			if (linkAttrs.getNamedItem("as") != null){
+				namedElements.put("link" + linkAttrs.getNamedItem("as").getNodeValue(), linkData);
+			}
+			return linkData;
+		}else{
+			return (LinkData) namedElements.get("link" + linkAttrs.getNamedItem("ref").getNodeValue());
+		}
 	}
 
-	private void loadFormNode(Node node, SearchingData searchingData) {
-		FormData formData = new FormData();
+	private FormData loadFormNode(Node node) {
 		NamedNodeMap formAttrs = node.getAttributes();
-		if (formAttrs.getNamedItem("no") != null) {
-			formData.setNo(Integer.valueOf(formAttrs.getNamedItem("no")
-					.getNodeValue()));
-		} else if (formAttrs.getNamedItem("name") != null) {
-			formData.setFormName(formAttrs.getNamedItem("name").getNodeValue());
-		} else if (formAttrs.getNamedItem("id") != null) {
-			formData.setFormId(formAttrs.getNamedItem("id").getNodeValue());
-		}
+		if (formAttrs.getNamedItem("ref") == null){
+			FormData formData = new FormData();
+			if (formAttrs.getNamedItem("no") != null) {
+				formData.setNo(Integer.valueOf(formAttrs.getNamedItem("no")
+						.getNodeValue()));
+			} else if (formAttrs.getNamedItem("name") != null) {
+				formData.setFormName(formAttrs.getNamedItem("name").getNodeValue());
+			} else if (formAttrs.getNamedItem("id") != null) {
+				formData.setFormId(formAttrs.getNamedItem("id").getNodeValue());
+			}
+	
+			if (formAttrs.getNamedItem("buttonNo") != null) {
+				formData.setButtonNo(Integer.valueOf(formAttrs.getNamedItem(
+						"buttonNo").getNodeValue()));
+			} else if (formAttrs.getNamedItem("buttonName") != null) {
+				formData.setButtonName(formAttrs.getNamedItem("buttonName")
+						.getNodeValue());
+			} else if (formAttrs.getNamedItem("buttonId") != null) {
+				formData.setButtonId(formAttrs.getNamedItem("buttonId")
+						.getNodeValue());
+			}
+	
+			Node fieldNode = node.getFirstChild();
+			while (fieldNode != null) {
+				formData.addFieldData(loadFormFieldNode(fieldNode));
+				fieldNode = fieldNode.getNextSibling();
+			}
+			if (formAttrs.getNamedItem("as") != null){
+				namedElements.put("form" + formAttrs.getNamedItem("as").getNodeValue(), formData);
+			}
 
-		if (formAttrs.getNamedItem("buttonNo") != null) {
-			formData.setButtonNo(Integer.valueOf(formAttrs.getNamedItem(
-					"buttonNo").getNodeValue()));
-		} else if (formAttrs.getNamedItem("buttonName") != null) {
-			formData.setButtonName(formAttrs.getNamedItem("buttonName")
-					.getNodeValue());
-		} else if (formAttrs.getNamedItem("buttonId") != null) {
-			formData.setButtonId(formAttrs.getNamedItem("buttonId")
-					.getNodeValue());
+			return formData;
+		}else{
+			return (FormData) namedElements.get("form" + formAttrs.getNamedItem("ref").getNodeValue());
 		}
-
-		Node fieldNode = node.getFirstChild();
-		while (fieldNode != null) {
-			loadFormFieldNode(fieldNode, formData);
-			fieldNode = fieldNode.getNextSibling();
-		}
-
-		searchingData.addFlowData(formData);
 	}
 
-	private void loadFormFieldNode(Node fieldNode, FormData formData) {
+	private FormFieldData loadFormFieldNode(Node fieldNode) {
 		FormFieldData fieldData = new FormFieldData();
 		NamedNodeMap fieldAttrs = fieldNode.getAttributes();
 
@@ -127,34 +199,44 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			fieldData.setFormFieldName(fieldAttrs.getNamedItem("name")
 					.getNodeValue());
 		}
-		if (fieldAttrs.getNamedItem("value") != null) {
-			fieldData.setDefaultValue(fieldAttrs.getNamedItem("value")
-					.getNodeValue());
+		if (fieldAttrs.getNamedItem("values") != null) {
+			fieldData.addDefaultValues(Arrays.asList(fieldAttrs.getNamedItem("values")
+					.getNodeValue().split("|")));
 		}
 		if (fieldAttrs.getNamedItem("usedValues") != null) {
 			fieldData.addUsedValues(Arrays.asList(fieldAttrs
-					.getNamedItem("usedValues").getNodeValue().split(";")));
+					.getNamedItem("usedValues").getNodeValue().split("|")));
 		}
 		if (fieldNode.hasChildNodes()) {
 			fieldData.setDescription(fieldNode.getFirstChild().getNodeValue());
 		}
-		formData.addFieldData(fieldData);
+		return fieldData;
 	}
 
-	private void loadContentNode(Node contentNode, SearchingData searchingData) {
-		ContentData contentData = searchingData.getContentFinder();
-
-		Node node = contentNode.getFirstChild();
-		loadFirstContentNode(node, contentData);
-
-		node = node.getNextSibling();
-		loadSecondContentNode(node, contentData);
-
-		node = node.getNextSibling();
-		if (node != null) {
-			loadLinkNode(node, contentData);
+	private ContentData loadContentNode(Node contentNode) {
+		NamedNodeMap contentAttrs = contentNode.getAttributes();
+		if (contentAttrs.getNamedItem("ref") == null){
+			ContentData contentData = new ContentData();
+	
+			Node node = contentNode.getFirstChild();
+			loadFirstContentNode(node, contentData);
+	
+			node = node.getNextSibling();
+			loadSecondContentNode(node, contentData);
+	
+			node = node.getNextSibling();
+			if (node != null) {
+				contentData.setNextPageLink(loadLinkNode(node));
+			}
+			
+			if (contentAttrs.getNamedItem("as") != null){
+				namedElements.put("content" + contentAttrs.getNamedItem("as").getNodeValue(), contentData);
+			}
+			
+			return contentData;
+		}else{
+			return (ContentData) namedElements.get("content" + contentAttrs.getNamedItem("ref").getNodeValue());
 		}
-		searchingData.setContentFinder(contentData);
 	}
 
 	private void loadFirstContentNode(Node node, ContentData contentData) {
@@ -192,8 +274,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		}
 	}
 
-	// ************************** Parsing searching configuration
-	// **************************************
+	// ************************** Parsing searching configuration **************************************
 
 	public String parse(String configFilePath) {
 		Document dom = loadDom(configFilePath);
@@ -212,15 +293,14 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 
 		Node node = urlNode.getFirstChild();
 		while (node != null) {
-			parseFlowNode(node, message, false);
+			parseFlowNode(node, message);
 			node = node.getNextSibling();
 		}
 
 		return message.toString();
 	}
 
-	private void parseFlowNode(Node node, StringBuilder message,
-			boolean inSwitch) {
+	private void parseFlowNode(Node node, StringBuilder message) {
 
 		if (node.getNodeName().equals("link")) {
 			parseLinkNode(node, message);
@@ -234,14 +314,12 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			}
 		} else if (node.getNodeName().equals("switch")) {
 			parseSwitchNode(node, message);
-			parseFlowNode(node.getFirstChild(), message, true);
-		} else if (inSwitch && node.getNodeName().equals("case")) {
-			parseCaseNode(node, message);
+			parseFlowNode(node.getFirstChild(), message);
 		} else {
 			message.append("Wrong node name of\'" + node.getNodeName() + "\'\n");
 		}
 	}
-
+	
 	private void parseUrlNode(Node urlNode, StringBuilder message) {
 		if (!urlNode.getNodeName().equalsIgnoreCase("url")) {
 			message.append("Wrong name for first node\n");
@@ -262,10 +340,10 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 				}
 			}
 		}
-		if (urlNode.getAttributes().getNamedItem("bulkRecords") != null
-				&& !urlNode.getAttributes().getNamedItem("bulkRecords")
+		if (urlNode.getAttributes().getNamedItem("maxRecords") != null
+				&& !urlNode.getAttributes().getNamedItem("maxRecords")
 						.getNodeValue().matches("\\d+")) {
-			message.append("Bulk records must be an integer\n");
+			message.append("Max records must be an integer\n");
 		}
 		if (urlNode.getAttributes().getNamedItem("crawledSites") != null
 				&& !urlNode.getAttributes().getNamedItem("bulkRecords")
@@ -400,12 +478,12 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 						}
 					}
 				}
-			} else if (fieldAttrs.item(i).getNodeName().equals("usedValues")) {
-				if (!fieldAttrs.item(i).getNodeValue().matches(".+(;.+)*")) {
-					message.append("Wrong \'usedValues\' value in \'"
+			} else if (fieldAttrs.item(i).getNodeName().equals("values")) {
+				if (fieldAttrs.item(i).getNodeValue().matches("((.+#every#) | (#every#.+) | (.+#all#) | (#all#.+))")) {
+					message.append("Wrong \'values\' value in \'"
 							+ fieldNode.getNodeName() + "\'\n");
 				}
-			} else if (!fieldAttrs.item(i).getNodeName().equals("value")
+			} else if (!fieldAttrs.item(i).getNodeName().equals("usedValues")
 					&& !fieldAttrs.item(i).getNodeName().equals("name")) {
 				message.append("Wrong attribute \'"
 						+ fieldAttrs.item(i).getNodeName()
@@ -443,6 +521,17 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			if (node != null && node.getNodeName().equals("nextPageLink")) {
 				parseLinkNode(node, message);
 			}
+			
+			Node n = node;
+			do{
+				if (n.getNextSibling() != null){
+					message.append("Content node cannot be followed by another nodes");
+				}
+				n = n.getParentNode();
+				if (!n.getNodeName().equals("url")){
+					n = n.getParentNode();
+				}
+			}while(!n.getNodeName().equals("url"));
 		}else {
 			String refValue = attrs.getNamedItem("ref").getNodeValue();
 			if (attrs.getLength() != 1) {
@@ -593,6 +682,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		if (attrs.getLength() == 0) {
 			message.append("Missing fields attributes in \'switch\' node\n");
 		}
+		List<Integer> fieldNbs = new LinkedList<Integer>();
 		for (int i = 0; i < attrs.getLength(); i++) {
 			if (!attrs.item(i).getNodeName().matches("field\\d*")) {
 				message.append("Wrong attribute \'"
@@ -615,19 +705,39 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 							+ "\'\n");
 				}
 			}
+			String strFieldNb = attrs.item(i).getNodeName().replace("field",  "");
+			Integer fieldNb = strFieldNb.trim().isEmpty() ? 0 : Integer.valueOf(strFieldNb);
+			fieldNbs.add(fieldNb);
+		}
+		if (node.hasChildNodes()){
+			Node caseNode = node.getFirstChild();
+			while (caseNode != null){
+				parseCaseNode(caseNode, message, fieldNbs);
+				caseNode = caseNode.getNextSibling();
+			}
+		}else{
+			message.append("Missing case statements in switch node\n");
 		}
 	}
 
-	private void parseCaseNode(Node node, StringBuilder message) {
+	private void parseCaseNode(Node node, StringBuilder message, List<Integer> fieldNbs) {
 		NamedNodeMap attrs = node.getAttributes();
 		if (attrs.getLength() == 0) {
 			message.append("Missing values attributes in \'case\' node\n");
 		}
+		List<Integer> valuesNbs = new LinkedList<Integer>();
 		for (int i = 0; i < attrs.getLength(); i++) {
 			if (!attrs.item(i).getNodeName().matches("values\\d*")) {
 				message.append("Wrong attribute \'"
 						+ attrs.item(i).getNodeName() + "\' in node \'case\'\n");
 			}
+			String strValuesNb = attrs.item(i).getNodeName().replace("field",  "");
+			Integer valuesNb = strValuesNb.trim().isEmpty() ? 0 : Integer.valueOf(strValuesNb);
+			valuesNbs.add(valuesNb);
+			if (fieldNbs.contains(valuesNb)){
+				message.append("There is no field matching to \'values" + valuesNb + "\'\n");
+			}
 		}
+		parseFlowNode(node, message);
 	}
 }

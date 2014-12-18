@@ -1,4 +1,4 @@
-<url address="http://admin-apps.webofknowledge.com/JCR/JCR?SID" bulkRecords="300" crawledSites="120">
+<url address="http://admin-apps.webofknowledge.com/JCR/JCR?SID" maxRecords="300" crawledSites="120">
 	<link type="text" value="establish a new session" />
 
 	<form name="limits" buttonName="Submit" as="first">
