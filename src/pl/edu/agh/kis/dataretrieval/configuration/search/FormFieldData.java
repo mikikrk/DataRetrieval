@@ -151,8 +151,17 @@ public class FormFieldData {
 		this.usedValues = usedValues;
 	}
 	
-	public void addUsedValues(Collection<String> usedValues){
+	public void addUsedValues(List<String> usedValues) {
 		this.usedValues.addAll(usedValues);
+	}
+	
+	
+	public void addUsedValue(String usedValue) {
+		this.usedValues.add(usedValue);
+	}
+
+	public void clearUsedValues(){
+		this.usedValues.clear();
 	}
 
 	public List<String> getDefaultValues() {
@@ -163,8 +172,12 @@ public class FormFieldData {
 		this.defaultValues.add(defaultValue);
 	}
 
-	public void addDefaultValues(List<String> defaultValue) {
-		this.defaultValues.addAll(defaultValue);
+	public void addDefaultValues(List<String> defaultValues) {
+		this.defaultValues.addAll(defaultValues);
+	}
+	
+	public void setDefaultValues(List<String> defaultValues) {
+		this.defaultValues = defaultValues;
 	}
 	
 	public List<String> getAlternativeDefaultValues() {

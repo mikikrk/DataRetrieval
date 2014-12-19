@@ -32,10 +32,9 @@ public abstract class ConfigurationReader {
 	protected static final List<String> ALLOWED_TYPES = Arrays.asList("TEXT,TEXTAREA,CHECKBOX,COMBOBOX,LIST,RADIO".split(","));
 	
 	public abstract String parse(Document dom);
-	public abstract String parse(String configFilePath);
+	public abstract String parse(String configFilePath) throws ParserConfigurationException, SAXException, IOException;
 	
-	protected Document loadDom(String configFilePath) {
-		try {
+	public static Document loadDom(String configFilePath) throws ParserConfigurationException, SAXException, IOException {
 			FileInputStream file = new FileInputStream(new File(configFilePath));
 			DocumentBuilderFactory builderFactory = DocumentBuilderFactory
 					.newInstance();
@@ -44,20 +43,6 @@ public abstract class ConfigurationReader {
 			Document dom = builder.parse(file);
 			file.close();
 			return dom;
-
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		} catch (SAXException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		} catch (ParserConfigurationException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
 	}
 	
 	protected void removeEmptyNodes(Document dom) {

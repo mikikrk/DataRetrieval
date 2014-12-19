@@ -30,25 +30,17 @@ import com.meterware.httpunit.WebResponse;
 
 public class ContentProcessor {
 	
-	public static List<WebResponse> findSites(WebResponse mainPageResp, ContentData contentData, Integer maxAmount, Integer startLink) throws SAXException, XPathExpressionException, IOException, DOMException, RetrievalException{
+	public static List<WebResponse> findSites(WebResponse mainPageResp, ContentData contentData, Integer maxAmount, Integer startLink) throws SAXException, XPathExpressionException, IOException, DOMException, RetrievalException, NoSiteRetrievedException{
 		List<WebResponse> sites = new ArrayList<WebResponse>();
 		String expression = RetrievalHelper.getXpathExpression(contentData);
 		
 		boolean allRetrieved = false;
 		
 		while(maxAmount != 0 || !allRetrieved){
-			try {
-				List<WebResponse> sitesFromOneSite = retrieveSites(mainPageResp, contentData, expression, startLink, maxAmount);
-				sites.addAll(sitesFromOneSite);
-				if (maxAmount != -1){
-					maxAmount -= sitesFromOneSite.size();
-				}
-			}catch(NoSiteRetrievedException e){
-				if (startLink >= 1){
-					startLink -= e.getLinkCount();
-				}else{
-					throw new RetrievalException("No link has been found");
-				}
+			List<WebResponse> sitesFromOneSite = retrieveSites(mainPageResp, contentData, expression, startLink, maxAmount);
+			sites.addAll(sitesFromOneSite);
+			if (maxAmount != -1){
+				maxAmount -= sitesFromOneSite.size();
 			}
 			try{
 				mainPageResp = LinkProcessor.goTo(mainPageResp, contentData.getNextPageLink());

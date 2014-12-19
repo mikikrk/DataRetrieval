@@ -1,14 +1,18 @@
 package pl.edu.agh.kis.dataretrieval.configuration.search;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 import pl.edu.agh.kis.dataretrieval.RetrievalException;
 import pl.edu.agh.kis.dataretrieval.configuration.ConfigData;
@@ -19,7 +23,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 	private Map<String, List<String>> references = new HashMap<String, List<String>>();
 	private Map<String, ConfigData> namedElements = new HashMap<String, ConfigData>();
 
-	public SearchingData load(String configFilePath) throws RetrievalException {
+	public SearchingData load(String configFilePath) throws RetrievalException, ParserConfigurationException, SAXException, IOException {
 		SearchingData searchingData = new SearchingData();
 		Document dom = loadDom(configFilePath);
 		removeEmptyNodes(dom);
@@ -281,7 +285,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 
 	// ************************** Parsing searching configuration **************************************
 
-	public String parse(String configFilePath) {
+	public String parse(String configFilePath) throws ParserConfigurationException, SAXException, IOException {
 		Document dom = loadDom(configFilePath);
 		return parse(dom);
 	}
@@ -458,7 +462,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 							+ fieldNode.getNodeName() + "\'\n");
 				}
 			} else if (fieldAttrs.item(i).getNodeName().equals("values")) {
-				if (fieldAttrs.item(i).getNodeValue().matches("((.+#every#) | (#every#.+) | (.+#all#) | (#all#.+))")) {
+				if (fieldAttrs.item(i).getNodeValue().matches("((.+$every$) | ($every$.+) | (.+$all$) | ($all$.+))")) {
 					message.append("Wrong \'values\' value in \'"
 							+ fieldNode.getNodeName() + "\'\n");
 				}

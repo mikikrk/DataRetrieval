@@ -54,7 +54,7 @@ public class CrawlerDao {
 			Statement statement = connection.createStatement();
 			statement.execute("DROP TABLE IF EXISTS " + tableName);
 			
-			StringBuilder sql = new StringBuilder("CREATE TABLE " + tableName + "( id SERIAL PRIMARY KEY,");
+			StringBuilder sql = new StringBuilder("CREATE TABLE " + tableName + "(");
 			for (DbFieldData columnData: siteData){
 				sql.append(columnData.getDbColName() + " " + columnData.getDbColType() + " " + columnData.getDbConstraints() + ", ");
 			}
@@ -64,14 +64,16 @@ public class CrawlerDao {
 		}
 	}
 	
-	public void addSiteData(String tableName, List<DbFieldData> siteData){
+	public void addSiteData(String tableName, List<DbFieldData> siteData) throws SQLException{
 		PreparedStatement statement;
 		try {
 			statement = connection.prepareStatement(prepareSql4AddSiteData(tableName, siteData));
 			prepareStatement(statement, siteData);
 			statement.execute();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			if (!e.getSQLState().equals("23505")){	//DUPLICATE KEY mo¿e byæ próba wsadzania tego samego rakordu ponownie, która jest ignorowana, poniewa¿ w kilku wyszukaniach mo¿e byæ ten sam rekord
+				throw e;
+			}
 		}
 	}
 	
@@ -88,19 +90,15 @@ public class CrawlerDao {
 		return sql.toString();
 	}
 	
-	private void prepareStatement(PreparedStatement statement, List<DbFieldData> data){
-		try {
-			int i = 1;
-			for (DbFieldData arg: data){
-				if(arg.isArray()){
-					statement.setArray(i, connection.createArrayOf(arg.getDbColType().toLowerCase().substring(0, arg.getDbColType().indexOf('[')), ((List<Object>) arg.getValue()).toArray()));
-				}else{
-					statement.setObject(i, arg.getValue());
-				}
-				i++;
+	private void prepareStatement(PreparedStatement statement, List<DbFieldData> data) throws SQLException{
+		int i = 1;
+		for (DbFieldData arg: data){
+			if(arg.isArray()){
+				statement.setArray(i, connection.createArrayOf(arg.getDbColType().toLowerCase().substring(0, arg.getDbColType().indexOf('[')), ((List<Object>) arg.getValue()).toArray()));
+			}else{
+				statement.setObject(i, arg.getValue());
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
+			i++;
 		}
 	}
 }

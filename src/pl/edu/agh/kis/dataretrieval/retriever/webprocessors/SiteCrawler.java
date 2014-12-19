@@ -59,7 +59,7 @@ public class SiteCrawler{
 		for (CrawlingData configNode: configNodes){
 			if (siteData.get(configNode.getDbTableName()) == null){
 				siteData.put(configNode.getDbTableName(), new ArrayList<DbFieldData>());
-				siteData.get(configNode.getDbTableName()).add(new DbFieldData("url", "TEXT", "", "String", false, configNode.isDbOverride(), url));
+				siteData.get(configNode.getDbTableName()).add(new DbFieldData("url", "TEXT", "PRIMARY_KEY", "String", false, configNode.isDbOverride(), url));
 			}
 			if(configNode.getDataType().equals("link")){
 				LinkProcessor linkProcessor = new LinkProcessor();

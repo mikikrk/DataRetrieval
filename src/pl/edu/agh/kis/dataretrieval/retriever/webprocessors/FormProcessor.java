@@ -1,8 +1,10 @@
 package pl.edu.agh.kis.dataretrieval.retriever.webprocessors;
 
 import java.awt.Component;
-import java.io.IOException;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -11,17 +13,19 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import org.apache.commons.lang3.StringUtils;
 import org.xml.sax.SAXException;
 
 import pl.edu.agh.kis.dataretrieval.RetrievalException;
+import pl.edu.agh.kis.dataretrieval.configuration.ConfigData;
 import pl.edu.agh.kis.dataretrieval.configuration.search.FormData;
 import pl.edu.agh.kis.dataretrieval.configuration.search.FormFieldData;
-import pl.edu.agh.kis.dataretrieval.gui.windows.FormWindow;
+import pl.edu.agh.kis.dataretrieval.configuration.search.SearchingData;
+import pl.edu.agh.kis.dataretrieval.configuration.search.SwitchData;
 
 import com.meterware.httpunit.Button;
 import com.meterware.httpunit.FormControl;
 import com.meterware.httpunit.FormParameter;
-import com.meterware.httpunit.RadioButtonFormControl;
 import com.meterware.httpunit.SubmitButton;
 import com.meterware.httpunit.WebForm;
 import com.meterware.httpunit.WebResponse;
@@ -35,7 +39,6 @@ public class FormProcessor {
 		for (FormFieldData fieldData: formData.getFields()){
 			loadField(fieldData, form);
 		}
-		setDefaultValues(formData.getFields());
 	}
 	
 	private WebForm getWebForm(FormData formData, WebResponse resp) throws SAXException, RetrievalException{
@@ -105,8 +108,66 @@ public class FormProcessor {
 		}
 	}
 	
-	private void setDefaultValues(List<FormFieldData> fieldDataList){
-		
+	public static boolean iterateUsedValues(SearchingData searchingData){
+		List<FormFieldData> fieldDataList = getAllFormFieldData(searchingData.getFlowDataList());
+		return iterateUsedValues(fieldDataList);
+	}
+	
+	private static List<FormFieldData> getAllFormFieldData(List<ConfigData> flowDataList){
+		List<FormFieldData> allFieldData = new LinkedList<FormFieldData>();
+
+		for (ConfigData configData: flowDataList){
+			if (configData instanceof FormData){
+				allFieldData.addAll(((FormData) configData).getFields());
+			}else if(configData instanceof SwitchData){
+				for (List<ConfigData> flDataList: ((SwitchData) configData).getCases().values()){
+					allFieldData.addAll(getAllFormFieldData(flDataList));
+				}
+			}
+		}
+		return allFieldData;
+	}
+	
+	private static boolean iterateUsedValues(List<FormFieldData> fieldDataList){
+		int i = 0;
+		boolean iterated = false;
+		while (iterated == false && i < fieldDataList.size()){
+			FormFieldData fieldData = fieldDataList.get(i);
+			if (!fieldData.getAlternativeDefaultValues().isEmpty()){
+				if (fieldData.getUsedValues().containsAll(fieldData.getAlternativeDefaultValues())){
+					fieldData.clearUsedValues();
+					fieldData.addUsedValue(fieldData.getAlternativeDefaultValues().get(0));
+				}else{
+					fieldData.addUsedValue(fieldData.getAlternativeDefaultValues().get(fieldData.getAlternativeDefaultValues().indexOf(StringUtils.join(fieldData.getDefaultValues(), ";"))));
+					iterated = true;
+				}
+			}
+		}
+		if (iterated == false){ //jeœli przesz³o wszystkie wêz³y resetuj¹c je i wracaj¹c do pocz¹tku
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
+	public void setDefaultValues(List<FormFieldData> fieldDataList, boolean bulkMode){
+		for (FormFieldData fieldData: fieldDataList){
+			List<String> alternativeDefaultValues = fieldData.getAlternativeDefaultValues();
+			if (!alternativeDefaultValues.isEmpty()){
+				List<String> defaultValues;
+				if (bulkMode){
+					List<String> usedValues = fieldData.getUsedValues();
+					if (!usedValues.isEmpty()){
+						defaultValues = Arrays.asList(usedValues.get(usedValues.size()-1).split(";"));
+					} else {
+						defaultValues = Arrays.asList(alternativeDefaultValues.get(0).split(";"));
+					}
+				}else {
+					defaultValues = Arrays.asList(alternativeDefaultValues.get(0).split(";"));
+				} 
+				fieldData.setDefaultValues(defaultValues);
+			}
+		}
 	}
 	
 	public WebResponse submitForm(FormData formData) throws RetrievalException{
