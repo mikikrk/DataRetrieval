@@ -2,7 +2,6 @@ package pl.edu.agh.kis.dataretrieval.retriever;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -11,7 +10,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.mozilla.javascript.EcmaError;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -39,24 +37,24 @@ import pl.edu.agh.kis.dataretrieval.gui.windows.StartWindow;
 import pl.edu.agh.kis.dataretrieval.retriever.webprocessors.ContentProcessor;
 import pl.edu.agh.kis.dataretrieval.retriever.webprocessors.FormProcessor;
 import pl.edu.agh.kis.dataretrieval.retriever.webprocessors.LinkProcessor;
-import pl.edu.agh.kis.dataretrieval.retriever.webprocessors.NoSiteRetrievedException;
 import pl.edu.agh.kis.dataretrieval.retriever.webprocessors.SiteCrawler;
+import pl.edu.agh.kis.dataretrieval.retriever.webprocessors.exceptions.NoSiteRetrievedException;
+import pl.edu.agh.kis.dataretrieval.retriever.webprocessors.exceptions.NotAllFieldsRetrievedException;
 
-import com.meterware.httpunit.ScriptException;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
 
 public class SiteRetriever implements Runnable{
 	
 	private WebConversation webConv = new WebConversation();
-	private WebResponse resp;
 	private FormProcessor formProcessor = new FormProcessor();
+	private WebResponse resp;
 	
 	private String searchingConfigPath;
 	private String crawlingConfigPath;
 	private boolean windowMode;
 	private boolean bulkMode;
-	
+
 	public SiteRetriever(String searchingConfigPath, String crawlingConfigPath, boolean windowMode, boolean bulkMode) {
 		this.searchingConfigPath = searchingConfigPath;
 		this.crawlingConfigPath = crawlingConfigPath;
@@ -65,7 +63,6 @@ public class SiteRetriever implements Runnable{
 	}
 
 	public void run() {
-		String dialogMessage = new String();
 		try{
 			SearchingConfigurationReader searchConfigReader = new SearchingConfigurationReader();
 			
@@ -73,96 +70,63 @@ public class SiteRetriever implements Runnable{
 			CrawlingConfigurationReader crawlingConfigReader = new CrawlingConfigurationReader();
 			List<CrawlingData> crawlingDataList = crawlingConfigReader.load(crawlingConfigPath);
 			CrawlerDao dao = new CrawlerDao(crawlingConfigPath);
-			for (int retries = 0; retries < 5; retries++){
-				try{
-					resp = webConv.getResponse(searchingData.getUrl());
-				}catch(EcmaError e){
-//					Do nothing
-				}catch (ScriptException e) {
-//					Do nothing
-				}
-			}
-			if (resp == null){
-				throw new RetrievalException("Could not connect to: " + searchingData.getUrl());
-			}
+			dao.createTable(crawlingDataList);
+			WebResponse startPageResp = goToSite(searchingData.getUrl());
 			
 			int sitesLeft = searchingData.getMaxRecords();
 			int startLink = searchingData.getCrawledSites() + 1;
-			int crawledSites = 0;
+			int crawledSites;
 			do {
+				crawledSites = 0;
 				if (bulkMode) {
 					FormProcessor.iterateUsedValues(searchingData, startLink);
 				}
 				try{
-					List<WebResponse> sites = goThroughtFlow(searchingData.getFlowDataList(), sitesLeft, startLink);
-					if (sites.size() == 0){
-						dialogMessage = "No site has been retrieved\n"
-								+ "Check if used content search path is set properly\n";
-					}else if (sites.size() == 1){
-						dialogMessage = "Only one site has been retrieved\n"
-								+ "Check if used content next path is set properly\n";
-					}
-					if (bulkMode && !dialogMessage.isEmpty()){
-						System.out.println(dialogMessage);
-						if (windowMode){
-							PopUpDialog successDialog = new PopUpDialog(dialogMessage);
-							successDialog.setVisible(true);
-						}
-					}
+					resp = startPageResp;
+					ContentData contentData = goThroughtFlow(searchingData.getFlowDataList());
+					ContentProcessor contentProcessor = new ContentProcessor(resp, contentData, sitesLeft, startLink);
+					startLink = 1; //w kolejnych iteracjach w trybie bulkowym strony maja byc juz pobierane od pocz¹tku
 					
-					crawledSites = sites.size();
-					if (sitesLeft != -1){
-						sitesLeft -= crawledSites;
-					}
-					startLink = 1;		//jeœli nie jest rzucony wyj¹tek to link startowy zosta³ pobrany i wszystkie kolejne maj¹ byæ pobierane
-				
-					boolean wasCreated = false;
-					for (WebResponse siteResp: sites){
-						Map<String, List<DbFieldData>> siteData = SiteCrawler.readData(siteResp, crawlingDataList);
-						if (!wasCreated){
-							for (Entry<String, List<DbFieldData>> entry: siteData.entrySet()){
-								dao.createTable(entry.getKey(), entry.getValue());
+					while(contentProcessor.hasNextSite()){
+						try{
+							WebResponse siteResp = contentProcessor.findNextSite();
+							crawledSites++;
+							
+							Map<String, List<DbFieldData>> siteData;
+							try{
+								siteData = SiteCrawler.readData(siteResp, crawlingDataList);
+							}catch(NotAllFieldsRetrievedException e){
+								siteData = e.getSiteData();
+								printError(e.getMessage());
 							}
-							wasCreated = true;
-						}
-						for (Entry<String, List<DbFieldData>> entry: siteData.entrySet()){
-						    dao.addSiteData(entry.getKey(), entry.getValue());
+							for (Entry<String, List<DbFieldData>> entry: siteData.entrySet()){
+							    dao.addSiteData(entry.getKey(), entry.getValue());
+							}
+						}catch(Exception e){
+							handleException(e);
 						}
 					}
 				
-					dao.closeConnection();
 				}catch(NoSiteRetrievedException e){		//nie zosta³ pobrany ¿aden link
-					if (startLink >= 1 && e.getLinkCount() != 1){
-						startLink -= e.getLinkCount();		//jeœli numer linku pocz¹tkowego by³ wiêkszy od 1 oraz zostal zwrocony licznik stron, to znaczy, ¿e link poczatkowy nie zostal znaleziony (prawdopodobnie zmalala ilosc linkow od ostatniego wyszukiwania)
-					}else{
-						if (!bulkMode){	//zakladamy ze tryb bulkowy moze wyszukac konfiguracje, w ktorej nie ma ¿adnych wynikow wyszukiwania
-							throw new RetrievalException(e.getMessage());
-						}
+					if (!bulkMode){	//zakladamy ze tryb bulkowy moze wyszukac konfiguracje, w ktorej nie ma ¿adnych wynikow wyszukiwania
+						throw e;
+					}else {
+						startLink = 1;
+						System.out.println("WARN: " + e.getMessage());
 					}
 				}
-				
+				if (sitesLeft != -1){
+					sitesLeft -= crawledSites;
+				}
 			} while (bulkMode && sitesLeft > 0);
+			dao.closeConnection();
 			if (bulkMode){
 				actualizeConfiguration(searchingData, crawledSites);
 			}
-			if (dialogMessage.isEmpty()){
-				dialogMessage += "All data has been succesfully downloaded to database";
-			}
-		} catch (IOException e) {
-			dialogMessage += "IO error occured: " + e.getMessage();
-		} catch (SAXException e) {
-			dialogMessage += "Error occured while parsing x(ht)ml:\n " + e.getMessage();
-		} catch (RetrievalException e) {
-			dialogMessage += e.getMessage();
-		} catch (XPathExpressionException e) {
-			dialogMessage += "Error in XPath expression" + e.getMessage();
-		} catch (DOMException e) {
-			dialogMessage += "Error while converting x(ht)ml to DOM\n" + e.getMessage();
-		} catch (SQLException e) {
-			dialogMessage += "Database error: \n" + e.getMessage();
-		} catch (ParserConfigurationException e) {
-			dialogMessage += "Configuration file is not proper xml file: \n" + e.getMessage();
+		} catch (Exception e){
+			handleException(e);
 		}
+		String endMessage = "Retrieving has been finished";
 		if (windowMode){
 			new Thread(){
 				public void run(){
@@ -171,18 +135,21 @@ public class SiteRetriever implements Runnable{
 				}
 			}.start();
 			
-			PopUpDialog successDialog = new PopUpDialog(dialogMessage);
+			PopUpDialog successDialog = new PopUpDialog(endMessage);
 			successDialog.setVisible(true);
 		}else{
-			System.err.println(dialogMessage);
+			System.out.println(endMessage);
 		}
 	}
 	
-	private List<WebResponse> goThroughtFlow(List<ConfigData> flowDataList, Integer maxRecords, Integer startLink) throws IOException, SAXException, RetrievalException, XPathExpressionException, DOMException, NoSiteRetrievedException{
+	private ContentData goThroughtFlow(List<ConfigData> flowDataList) throws IOException, SAXException, RetrievalException, XPathExpressionException, DOMException, NoSiteRetrievedException{
+		WebResponse nextResp;
 		for (ConfigData flowDataObj: flowDataList){
 			if (flowDataObj instanceof LinkData){
 				LinkData linkData = (LinkData) flowDataObj;
-				resp = LinkProcessor.goTo(resp, linkData);
+				nextResp = LinkProcessor.goTo(resp, linkData);
+				resp.close();
+				resp = nextResp;
 			} else if (flowDataObj instanceof FormData){
 				FormData formData = (FormData) flowDataObj;
 				formProcessor.loadForm(formData, resp);
@@ -194,7 +161,9 @@ public class SiteRetriever implements Runnable{
 				}else{
 					formWindow.dispose();
 				}
-				resp = formProcessor.submitForm(formData);
+				nextResp = formProcessor.submitForm(formData);
+				resp.close();
+				resp = nextResp;
 			} else if (flowDataObj instanceof SwitchData){
 				SwitchData switchData = (SwitchData) flowDataObj;
 				CaseData caseData = new CaseData();
@@ -208,16 +177,12 @@ public class SiteRetriever implements Runnable{
 						throw new RetrievalException("There is no case for given values");
 					}
 				}
-				List<WebResponse> sites = goThroughtFlow(flowData, maxRecords, startLink);
-				if (!sites.isEmpty()){
-					return sites;
-				}
+				return goThroughtFlow(flowData);
 			} else if(flowDataObj instanceof ContentData){
-				ContentData contentData = (ContentData) flowDataObj;
-				return ContentProcessor.findSites(resp, contentData, maxRecords, startLink);
+				return (ContentData) flowDataObj;
 			} 
 		}
-		return new LinkedList<WebResponse>();
+		return null;
 	}
 	
 	private void actualizeConfiguration(SearchingData searchingData, int crawledSites) throws ParserConfigurationException, SAXException, IOException{
@@ -253,6 +218,54 @@ public class SiteRetriever implements Runnable{
 				}
 			}
 			flowNode = flowNode.getNextSibling();
+		}
+	}
+	private WebResponse goToSite(String url) throws RetrievalException, IOException, SAXException{
+		for (int retries = 0; retries < 5; retries++){
+			try{
+				return webConv.getResponse(url);
+			}catch (RuntimeException e){
+//				Do nothing
+			}
+		}
+		throw new RetrievalException("Could not connect to: " + url);
+	}
+	
+	private void handleException(Exception exception){
+		String errorMessage;
+		try{
+			throw exception;
+		}catch (IOException e) {
+			errorMessage = "IO error occured: " + e.getMessage();
+		} catch (SAXException e) {
+			errorMessage = "Error occured while parsing x(ht)ml:\n " + e.getMessage();
+		} catch (RetrievalException e) {
+			errorMessage = e.getMessage();
+		}  catch (NoSiteRetrievedException e) {
+			errorMessage = e.getMessage();
+		} catch (XPathExpressionException e) {
+			errorMessage = "Error in XPath expression" + e.getMessage();
+		} catch (DOMException e) {
+			errorMessage = "Error while converting x(ht)ml to DOM\n" + e.getMessage();
+		} catch (SQLException e) {
+			errorMessage = "Database error: \n" + e.getMessage();
+		} catch (ParserConfigurationException e) {
+			errorMessage = "Configuration file is not proper xml file: \n" + e.getMessage();
+		} catch (Exception e){
+			errorMessage = e.getMessage();
+		}
+		printError(errorMessage);
+	}
+	
+	private void printError(final String errorMessage){
+		if (windowMode){
+			new Thread(){
+				public void run(){
+					new PopUpDialog(errorMessage, true);
+				}
+			}.start();
+		}else{
+			System.err.println(errorMessage);
 		}
 	}
 }

@@ -18,11 +18,29 @@ public class PopUpDialog extends JDialog {
 	private final int LETTER_WIDTH = 8;
 	private final int LETTER_HEIGHT = 19;
 	private final int STANDARD_HEIGHT = 90;
+	
+	private String message;
+	private boolean error = false;
+	
 	/**
 	 * Create the dialog.
 	 */
+	public PopUpDialog(String message, boolean error){
+		this.message = message;
+		this.error = error;
+		init();
+	}
 	public PopUpDialog(String message) {
-		System.out.println(message);
+		this.message = message;
+		init();
+	}
+	
+	private void init(){
+		if (error){
+			System.err.println(message);
+		}else{
+			System.out.println(message);
+		}
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
 		setDialogBounds(message);
@@ -50,6 +68,7 @@ public class PopUpDialog extends JDialog {
 				getRootPane().setDefaultButton(okButton);
 			}
 		}
+		this.setVisible(true);
 	}
 	
 	private void setDialogBounds(String message){

@@ -2,12 +2,17 @@ package pl.edu.agh.kis.dataretrieval.database;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -44,22 +49,33 @@ public class CrawlerDao {
 		}
 	}
 	
-	public void closeConnection(){
-		try {
-			connection.close();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+	public void closeConnection() throws SQLException{
+		connection.close();
+	}
+	
+	public void createTable(List<CrawlingData> crawlingDataList) throws SQLException{
+		Map<String, List<CrawlingData>> tablesData = split4Tables(crawlingDataList);
+		
+		for(Entry<String, List<CrawlingData>> entry: tablesData.entrySet()){
+			createTable(entry.getKey(), entry.getValue());
 		}
 	}
 	
-	public void createTable(String tableName, List<DbFieldData> siteData) throws SQLException{
-		if (siteData.get(0).isDbOverride() || /*!*/connection.getMetaData().getTables(null, null, tableName, new String[]{"TABLE"}) != null){ //TODO .getString("TABLE_NAME").equals(tableName)){
+	public void createTable(String tableName, List<CrawlingData> siteData) throws SQLException{
+		DatabaseMetaData md = connection.getMetaData();
+		ResultSet rs = md.getTables(null, null, tableName, null);
+		boolean exists = false;
+		while (rs.next()) {
+		  if (rs.getString("TABLE_NAME").equals(tableName)){
+			  exists = true;
+		  }
+		}
+		if (siteData.get(0).isDbOverwrite() || !exists){
 			Statement statement = connection.createStatement();
 			statement.execute("DROP TABLE IF EXISTS " + tableName);
 			
 			StringBuilder sql = new StringBuilder("CREATE TABLE " + tableName + "(");
-			for (DbFieldData columnData: siteData){
+			for (CrawlingData columnData: siteData){
 				sql.append(columnData.getDbColName() + " " + columnData.getDbColType() + " " + columnData.getDbConstraints() + ", ");
 			}
 			sql.setCharAt(sql.length() - 2, ')');
@@ -79,8 +95,19 @@ public class CrawlerDao {
 		} catch (SQLException e) {
 			if (!e.getSQLState().equals("23505")){	//DUPLICATE KEY mo¿e byæ próba wsadzania tego samego rakordu ponownie, która jest ignorowana, poniewa¿ w kilku wyszukaniach mo¿e byæ ten sam rekord
 				throw e;
+			}else{
+				updateSiteData(tableName, siteData);
 			}
 		}
+	}
+	
+	public void updateSiteData(String tableName, List<DbFieldData> siteData) throws SQLException{
+		PreparedStatement statement = null;
+		while (statement == null){
+			statement = connection.prepareStatement(prepareSql4UpdateSiteData(tableName, siteData));
+		}
+		prepareStatement(statement, siteData);
+		statement.execute();
 	}
 	
 	private String prepareSql4AddSiteData(String tableName, List<DbFieldData> siteData){
@@ -96,6 +123,15 @@ public class CrawlerDao {
 		return sql.toString();
 	}
 	
+	private String prepareSql4UpdateSiteData(String tableName, List<DbFieldData> siteData){
+		StringBuilder sql = new StringBuilder("UPDATE " + tableName + "SET ");
+		for (DbFieldData field: siteData){
+			sql.append(field.getDbColName() + " = ?, ");
+		}
+		sql.deleteCharAt(sql.length() - 2);
+		return sql.toString();
+	}
+	
 	private void prepareStatement(PreparedStatement statement, List<DbFieldData> data) throws SQLException{
 		int i = 1;
 		for (DbFieldData arg: data){
@@ -106,5 +142,19 @@ public class CrawlerDao {
 			}
 			i++;
 		}
+	}
+	
+	private Map<String, List<CrawlingData>> split4Tables(List<CrawlingData> crawlingDataList){
+		Map<String, List<CrawlingData>> tables = new HashMap<String, List<CrawlingData>>();
+		for (CrawlingData crawlingData: crawlingDataList){
+			if (tables.containsKey(crawlingData.getDbTableName())){
+				tables.get(crawlingData.getDbTableName()).add(crawlingData);
+			}else{
+				List<CrawlingData> newList =  new LinkedList<CrawlingData>();
+				newList.add(crawlingData);
+				tables.put(crawlingData.getDbTableName(), newList);
+			}
+		}
+		return tables;
 	}
 }

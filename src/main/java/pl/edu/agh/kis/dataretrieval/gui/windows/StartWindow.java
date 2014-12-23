@@ -1,5 +1,5 @@
 package pl.edu.agh.kis.dataretrieval.gui.windows;
-import java.awt.EventQueue;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -19,21 +20,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JTextPane;
+import javax.swing.JScrollPane;
 import javax.swing.LayoutStyle.ComponentPlacement;
-import javax.swing.SwingConstants;
+import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import pl.edu.agh.kis.dataretrieval.RetrievalException;
 import pl.edu.agh.kis.dataretrieval.gui.ConfigHelper;
 import pl.edu.agh.kis.dataretrieval.gui.FilePathHolder;
-import pl.edu.agh.kis.dataretrieval.gui.ConfigHelper.ConfigType;
-import pl.edu.agh.kis.dataretrieval.gui.ConfigHelper.Type;
 import pl.edu.agh.kis.dataretrieval.retriever.SiteRetriever;
-import javax.swing.JScrollPane;
-import javax.swing.ListSelectionModel;
-import java.awt.Dimension;
 
 
 public class StartWindow extends JFrame {
@@ -318,6 +313,8 @@ public class StartWindow extends JFrame {
 		List<FilePathHolder> configFilesList = new ArrayList<FilePathHolder>();
 		File configFilesListFile = new File(filePath);
 
+		List<String> filesToDelete = new LinkedList<String>();
+		
 		Scanner scanner = null;
 		try {
 			if (!configFilesListFile.exists()){
@@ -329,7 +326,12 @@ public class StartWindow extends JFrame {
 			}else{
 				scanner = new Scanner(configFilesListFile);
 				while(scanner.hasNextLine()){
-					configFilesList.add(new FilePathHolder(scanner.nextLine()));
+					FilePathHolder file = new FilePathHolder(scanner.nextLine());
+					if (Files.exists(new File(file.getFilePath()).toPath())){
+						configFilesList.add(file);
+					}else{
+						filesToDelete.add(file.getFilePath());
+					}
 				}
 
 			}
@@ -343,6 +345,10 @@ public class StartWindow extends JFrame {
 			if(scanner != null){
 				scanner.close();
 			}
+		}
+
+		for (String fileToDelete: filesToDelete){
+			deleteConfigFromList(fileToDelete, filePath);
 		}
 		
 		if(!configFilesList.isEmpty()){

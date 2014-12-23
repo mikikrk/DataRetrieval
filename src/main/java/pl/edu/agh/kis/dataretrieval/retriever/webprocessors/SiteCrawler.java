@@ -22,6 +22,7 @@ import org.xml.sax.SAXException;
 import pl.edu.agh.kis.dataretrieval.RetrievalException;
 import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingData;
 import pl.edu.agh.kis.dataretrieval.database.DbFieldData;
+import pl.edu.agh.kis.dataretrieval.retriever.webprocessors.exceptions.NotAllFieldsRetrievedException;
 
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
@@ -51,50 +52,58 @@ public class SiteCrawler{
 		return readData(response, configNodes, siteData);
 	}
 	
-	private static Map<String, List<DbFieldData>> readData(WebResponse response, List<CrawlingData> configNodes, Map<String, List<DbFieldData>> siteData) throws DOMException, RetrievalException, SAXException, IOException, XPathExpressionException{
+	private static Map<String, List<DbFieldData>> readData(WebResponse response, List<CrawlingData> configNodes, Map<String, List<DbFieldData>> siteData) throws NotAllFieldsRetrievedException, SAXException{
 		XPath xPath =  XPathFactory.newInstance().newXPath();
 		Document dom = response.getDOM();
 		String url = response.getURL().toString();
 		
+		String errorsMessages = new String();
 		for (CrawlingData configNode: configNodes){
-			if (siteData.get(configNode.getDbTableName()) == null){
-				siteData.put(configNode.getDbTableName(), new ArrayList<DbFieldData>());
-				siteData.get(configNode.getDbTableName()).add(new DbFieldData("url", "TEXT", "PRIMARY KEY", "String", false, configNode.isDbOverride(), url));
-			}
-			if(configNode.getDataType().equals("link")){
-				LinkProcessor linkProcessor = new LinkProcessor();
-				WebResponse resp = linkProcessor.goTo(response, configNode);
-				readData(resp, configNode.getUnderLink(), siteData);
-			}else{
-				String expression = RetrievalHelper.getXpathExpression(configNode);
-				
-				NodeList nodeList = (NodeList) xPath.compile(expression).evaluate(dom, XPathConstants.NODESET);
-				Node node;
-				List<Object> dataList = new ArrayList<Object>(); 
-				
-				if (configNode.isArray() && configNode.getSearchNextPath() == null){	//gdy parametr 'array' jest podany w pierwszym wezle - kolejne elementy tablicy sa kolejnymi elementami znalezionymi przez sciezke xpath
-					for (int i = 0; i<nodeList.getLength(); i++){
-						node = nodeList.item(i);
-						dataList.add(goThroughPath(configNode, node));
-					}
-					siteData.get(configNode.getDbTableName()).add(new DbFieldData(configNode, dataList));
-				}else if(configNode.getBenchmarkNo().size() > 1){
-					for (int i: configNode.getBenchmarkNo()){
-						node = nodeList.item(i);
-						dataList.add(goThroughPath(configNode, node));
-					}
-					siteData.get(configNode.getDbTableName()).add(new DbFieldData(configNode, dataList));
-				}else {
-					if (!configNode.getBenchmarkNo().isEmpty()){
-						node = nodeList.item(configNode.getBenchmarkNo().get(0)-1); 
-					}else{
-						node = nodeList.item(0);
-					}
-					siteData.get(configNode.getDbTableName()).add(new DbFieldData(configNode, goThroughPath(configNode, node)));
+			try{
+				if (siteData.get(configNode.getDbTableName()) == null){
+					siteData.put(configNode.getDbTableName(), new ArrayList<DbFieldData>());
+					siteData.get(configNode.getDbTableName()).add(new DbFieldData("url", "TEXT", "PRIMARY KEY", "String", false, configNode.isDbOverwrite(), url));
 				}
+				if(configNode.getDataType().equals("link")){
+					LinkProcessor linkProcessor = new LinkProcessor();
+					WebResponse resp = linkProcessor.goTo(response, configNode);
+					readData(resp, configNode.getUnderLink(), siteData);
+				}else{
+					String expression = RetrievalHelper.getXpathExpression(configNode);
+					
+					NodeList nodeList = (NodeList) xPath.compile(expression).evaluate(dom, XPathConstants.NODESET);
+					Node node;
+					List<Object> dataList = new ArrayList<Object>(); 
+					
+					if (configNode.isArray() && configNode.getSearchNextPath() == null){	//gdy parametr 'array' jest podany w pierwszym wezle - kolejne elementy tablicy sa kolejnymi elementami znalezionymi przez sciezke xpath
+						for (int i = 0; i<nodeList.getLength(); i++){
+							node = nodeList.item(i);
+							dataList.add(goThroughPath(configNode, node));
+						}
+						siteData.get(configNode.getDbTableName()).add(new DbFieldData(configNode, dataList));
+					}else if(configNode.getBenchmarkNo().size() > 1){
+						for (int i: configNode.getBenchmarkNo()){
+							node = nodeList.item(i);
+							dataList.add(goThroughPath(configNode, node));
+						}
+						siteData.get(configNode.getDbTableName()).add(new DbFieldData(configNode, dataList));
+					}else {
+						if (!configNode.getBenchmarkNo().isEmpty()){
+							node = nodeList.item(configNode.getBenchmarkNo().get(0)-1); 
+						}else{
+							node = nodeList.item(0);
+						}
+						siteData.get(configNode.getDbTableName()).add(new DbFieldData(configNode, goThroughPath(configNode, node)));
+					}
+				}
+			}catch(Exception e){
+				errorsMessages += e.getMessage() + "\n";
 			}
 		}
-			
+		response.close();
+		if (!errorsMessages.isEmpty()){
+			throw new NotAllFieldsRetrievedException("Error while retrieving data from \'" + configNodes.get(0).getBenchmark() + "\'\n" + errorsMessages, siteData);
+		}
 		return siteData;
 	}
 	

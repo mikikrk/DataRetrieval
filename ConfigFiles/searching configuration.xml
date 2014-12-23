@@ -1,11 +1,11 @@
-<url address="http://admin-apps.webofknowledge.com/JCR/JCR?SID" maxRecords="40">
+<url address="http://admin-apps.webofknowledge.com/JCR/JCR?SID">
     <link type="text" value="establish a new session" />
 
     <form name="limits" buttonName="Submit" as="first">
-        <edition options="JCR Science Edition;JCR Social Sciences Edition"/>
+        <edition values="JCR Science Edition" options="JCR Science Edition;JCR Social Sciences Edition"/>
         <science_year>JCR Science Edition Year</science_year>
-        <social_year values="2009">JCR Social Sciences Edition Year</social_year>
-        <RQ options="View a group of journals by;Search for a specific journal;View all journals"/>
+        <social_year values="2013">JCR Social Sciences Edition Year</social_year>
+        <RQ values="View all journals" options="View a group of journals by;Search for a specific journal;View all journals"/>
         <view>View a group of journals by options:</view>
     </form>
     <switch field1="first.RQ">

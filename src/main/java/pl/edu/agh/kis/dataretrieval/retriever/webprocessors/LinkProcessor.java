@@ -9,6 +9,7 @@ import pl.edu.agh.kis.dataretrieval.RetrievalException;
 import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingData;
 import pl.edu.agh.kis.dataretrieval.configuration.search.LinkData;
 
+import com.meterware.httpunit.ScriptException;
 import com.meterware.httpunit.WebLink;
 import com.meterware.httpunit.WebResponse;
 
@@ -34,9 +35,7 @@ public class LinkProcessor {
 		for (int clicks = 0; clicks < 5; clicks++){
 			try{
 				return link.click();
-			}catch (EcmaError e){
-//				Do nothing
-			}catch (RuntimeException e){
+			}catch (RuntimeException e) {
 //				Do nothing
 			}
 		}

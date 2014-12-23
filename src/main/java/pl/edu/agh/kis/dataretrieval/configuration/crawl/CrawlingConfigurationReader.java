@@ -51,16 +51,16 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 		while (tableNode != null) {	
 			String dbTableName = tableNode.getNodeName();
 			NamedNodeMap attrs = tableNode.getAttributes();
-			boolean override;
-			if (attrs.getNamedItem("override") != null){
-				override = Boolean.valueOf(attrs.getNamedItem("override").getNodeValue());
+			boolean overwrite;
+			if (attrs.getNamedItem("overwrite") != null){
+				overwrite = Boolean.valueOf(attrs.getNamedItem("overwrite").getNodeValue());
 			}else{
-				override = false;
+				overwrite = false;
 			}
 			Node node = tableNode.getFirstChild();
 			while (node != null) {
 				CrawlingData configNode= loadConfigNode(node, dbTableName);
-				configNode.setDbOverride(override);
+				configNode.setDbOverwrite(overwrite);
 				configNodes.add(configNode);
 				node = node.getNextSibling();
 			}
@@ -263,13 +263,13 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 				if(attrs.getLength() > 0){
 					message.append("Only the first table node can contain database attributes\n");
 				}
-			}else if ((tableNode != firstTableNode && (tableNode.getAttributes().getLength() == 1) || (tableNode == firstTableNode && firstTableNode.getAttributes().getLength() == 6)) && tableNode.getAttributes().getNamedItem("override") == null){
+			}else if ((tableNode != firstTableNode && (tableNode.getAttributes().getLength() == 1) || (tableNode == firstTableNode && firstTableNode.getAttributes().getLength() == 6)) && tableNode.getAttributes().getNamedItem("overwrite") == null){
 				message.append("Wrong attribute for table node \'" + tableNode.getNodeName() + "\'\n");
 			}
-			Node override;
-			if ((override = tableNode.getAttributes().getNamedItem("override")) != null){
-				if (!override.getNodeValue().equals("true") && !override.getNodeValue().equals("false")){
-					message.append("Wrong value of attribute \'override\' in node \'" + tableNode.getNodeName() + "\'\n");
+			Node overwrite;
+			if ((overwrite = tableNode.getAttributes().getNamedItem("overwrite")) != null){
+				if (!overwrite.getNodeValue().equals("true") && !overwrite.getNodeValue().equals("false")){
+					message.append("Wrong value of attribute \'overwrite\' in node \'" + tableNode.getNodeName() + "\'\n");
 				}
 			}
 			
@@ -294,11 +294,11 @@ public class CrawlingConfigurationReader extends ConfigurationReader{
 	private void parseFirstTableNode(Node firstTableNode, StringBuilder message){
 		if (firstTableNode.hasAttributes()) {
 			NamedNodeMap attrs = firstTableNode.getAttributes();
-			if (attrs.getLength() < 5 || attrs.getLength() > 6 || (attrs.getLength() == 5 && attrs.getNamedItem("override") != null)){
+			if (attrs.getLength() < 5 || attrs.getLength() > 6 || (attrs.getLength() == 5 && attrs.getNamedItem("overwrite") != null)){
 				message.append("All database data has to be defined in first table node");
 			}
 			for (int i = 0; i < attrs.getLength(); i++){
-				if(!(attrs.item(i).getNodeName().equals("host") || attrs.item(i).getNodeName().equals("port") || attrs.item(i).getNodeName().equals("dbname") || attrs.item(i).getNodeName().equals("user") || attrs.item(i).getNodeName().equals("password") || attrs.item(i).getNodeName().equals("override"))){
+				if(!(attrs.item(i).getNodeName().equals("host") || attrs.item(i).getNodeName().equals("port") || attrs.item(i).getNodeName().equals("dbname") || attrs.item(i).getNodeName().equals("user") || attrs.item(i).getNodeName().equals("password") || attrs.item(i).getNodeName().equals("overwrite"))){
 					message.append("Attribute \'" + attrs.item(i) + "\' is wrong for node \'" + firstTableNode.getNodeName() + "\'\n");
 				}
 			}

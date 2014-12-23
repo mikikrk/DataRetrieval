@@ -1,4 +1,4 @@
-package pl.edu.agh.kis.dataretrieval.retriever.webprocessors;
+package pl.edu.agh.kis.dataretrieval.retriever.webprocessors.exceptions;
 
 public class NoSiteRetrievedException extends Exception {
 	private int linkCount;
