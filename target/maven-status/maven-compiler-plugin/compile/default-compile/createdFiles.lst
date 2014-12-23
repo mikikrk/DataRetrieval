@@ -24,9 +24,10 @@ pl\edu\agh\kis\dataretrieval\configuration\search\SearchingData.class
 pl\edu\agh\kis\dataretrieval\gui\windows\StartWindow$6$1.class
 pl\edu\agh\kis\dataretrieval\gui\ConfigHelper.class
 pl\edu\agh\kis\dataretrieval\gui\windows\StartWindow$8$1.class
+pl\edu\agh\kis\dataretrieval\retriever\webprocessors\exceptions\NoNextSiteException.class
 pl\edu\agh\kis\dataretrieval\gui\windows\ConfigWindow$4.class
 pl\edu\agh\kis\dataretrieval\configuration\crawl\CrawlingConfigurationReader.class
-pl\edu\agh\kis\dataretrieval\retriever\webprocessors\NoSiteRetrievedException.class
+pl\edu\agh\kis\dataretrieval\retriever\SiteRetriever$2.class
 pl\edu\agh\kis\dataretrieval\configuration\search\FormFieldData.class
 pl\edu\agh\kis\dataretrieval\gui\windows\StartWindow$10.class
 pl\edu\agh\kis\dataretrieval\gui\windows\PopUpDialog$1.class
@@ -38,8 +39,10 @@ pl\edu\agh\kis\dataretrieval\RetrievalMain$1.class
 pl\edu\agh\kis\dataretrieval\configuration\crawl\CrawlingData.class
 pl\edu\agh\kis\dataretrieval\gui\windows\StartWindow$3.class
 pl\edu\agh\kis\dataretrieval\gui\windows\StartWindow$6.class
+pl\edu\agh\kis\dataretrieval\retriever\webprocessors\exceptions\NoSiteRetrievedException.class
 pl\edu\agh\kis\dataretrieval\configuration\search\SearchingConfigurationReader.class
 pl\edu\agh\kis\dataretrieval\retriever\SiteRetriever$1.class
+pl\edu\agh\kis\dataretrieval\retriever\webprocessors\exceptions\NotAllFieldsRetrievedException.class
 pl\edu\agh\kis\dataretrieval\gui\windows\StartWindow.class
 pl\edu\agh\kis\dataretrieval\configuration\search\FormData.class
 pl\edu\agh\kis\dataretrieval\configuration\search\FormFieldData$FieldType.class
