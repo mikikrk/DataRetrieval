@@ -22,8 +22,8 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
 import pl.edu.agh.kis.dataretrieval.RetrievalException;
-import pl.edu.agh.kis.dataretrieval.configuration.search.FormFieldData;
-import pl.edu.agh.kis.dataretrieval.configuration.search.FormFieldData.FieldType;
+import pl.edu.agh.kis.dataretrieval.configuration.searching.FormFieldData;
+import pl.edu.agh.kis.dataretrieval.configuration.searching.FormFieldData.FieldType;
 
 public class FormWindow extends JFrame {
 
@@ -35,6 +35,7 @@ public class FormWindow extends JFrame {
 	 * @throws RetrievalException 
 	 */
 	public FormWindow(List<FormFieldData> fields) throws RetrievalException {
+		setTitle("Form");
 		this.fields = fields;
 		setLayout(new GridLayout(getRowsAmount(), 1));
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -230,15 +231,11 @@ public class FormWindow extends JFrame {
 		notifyAll();
 	}
 	
-	public synchronized void waitForSubmit(){
-		try {
-			while (!submited){
-				this.wait();
-			}
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+	public synchronized void waitForSubmit() throws InterruptedException{
+		while (!submited){
+			this.wait();
 		}
+		
 	}
 	
 	private int getRowsAmount(){

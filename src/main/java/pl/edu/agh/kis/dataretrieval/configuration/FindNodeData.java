@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingData;
+import pl.edu.agh.kis.dataretrieval.configuration.retrieving.RetrievingData;
 
 public class FindNodeData implements ConfigData{
 	protected String benchmark;

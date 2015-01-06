@@ -1,7 +1,10 @@
 package pl.edu.agh.kis.dataretrieval;
 
+import javax.xml.ws.Holder;
+
+import pl.edu.agh.kis.dataretrieval.flow.FlowManager;
+import pl.edu.agh.kis.dataretrieval.gui.windows.ProgressWindow;
 import pl.edu.agh.kis.dataretrieval.gui.windows.StartWindow;
-import pl.edu.agh.kis.dataretrieval.retriever.SiteRetriever;
 
 public class RetrievalMain {
 
@@ -24,7 +27,7 @@ public class RetrievalMain {
 						+ "	-searching configuration path\n"
 						+ "	-crawling configuration path");
 			}else{
-				SiteRetriever siteRetriever = new SiteRetriever(args[0], args[1], false, true);
+				FlowManager siteRetriever = new FlowManager(args[0], args[1], false, true);
 				new Thread(siteRetriever).start();
 			}
 		}

@@ -25,10 +25,11 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 
 import pl.edu.agh.kis.dataretrieval.configuration.ConfigurationReader;
-import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingConfigurationReader;
-import pl.edu.agh.kis.dataretrieval.configuration.search.SearchingConfigurationReader;
+import pl.edu.agh.kis.dataretrieval.configuration.retrieving.RetrievingConfigurationReader;
+import pl.edu.agh.kis.dataretrieval.configuration.searching.SearchingConfigurationReader;
 import pl.edu.agh.kis.dataretrieval.gui.ConfigHelper;
 import pl.edu.agh.kis.dataretrieval.gui.FilePathHolder;
+
 import java.awt.Dimension;
 
 public class ConfigWindow extends JFrame {
@@ -73,6 +74,7 @@ public class ConfigWindow extends JFrame {
 	}
 	
 	private void prepareConfigWindow(){
+		setTitle("Configuration editor");
 		setBounds(100, 100, 600, 800);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -238,8 +240,8 @@ public class ConfigWindow extends JFrame {
 				try {
 					ConfigurationReader configReader;
 					
-					if (configType.equals(ConfigHelper.ConfigType.CRAWLING)){
-						configReader = new CrawlingConfigurationReader();
+					if (configType.equals(ConfigHelper.ConfigType.RETRIEVING)){
+						configReader = new RetrievingConfigurationReader();
 					}else{
 						configReader = new SearchingConfigurationReader();
 					}

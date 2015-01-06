@@ -1,37 +1,27 @@
 package pl.edu.agh.kis.dataretrieval.database;
 
-import pl.edu.agh.kis.dataretrieval.configuration.crawl.CrawlingData;
+import pl.edu.agh.kis.dataretrieval.configuration.retrieving.RetrievingData;
 
 public class DbFieldData {
 	private String dbColName;
 	private String dbColType;
-	private String dbConstraints;
-	private String dataType;
 	private boolean array;
-	private boolean dbOverwrite;
 	private Object value;
 	
-	public DbFieldData(CrawlingData nodeData, Object value) {
+	public DbFieldData(RetrievingData nodeData, Object value) {
 		super();
 		this.dbColName = nodeData.getDbColName();
 		this.dbColType = nodeData.getDbColType();
-		this.dbConstraints = nodeData.getDbConstraints();
-		this.dataType = nodeData.getDataType();
 		this.array = nodeData.isArray();
-		this.dbOverwrite = nodeData.isDbOverwrite();
 		this.value = value;
 	}
 	
 	public DbFieldData(String dbFieldname,
-			String dbColumnType, String dbConstraints, String dataType,
-			boolean array, boolean dbOverride, Object value) {
+			String dbColumnType, boolean array, Object value) {
 		super();
 		this.dbColName = dbFieldname;
 		this.dbColType = dbColumnType;
-		this.dbConstraints = dbConstraints;
-		this.dataType = dataType;
 		this.array = array;
-		this.dbOverwrite = dbOverride;
 		this.value = value;
 	}
 	
@@ -47,18 +37,6 @@ public class DbFieldData {
 	public void setDbColType(String dbColumnType) {
 		this.dbColType = dbColumnType;
 	}
-	public String getDbConstraints() {
-		return dbConstraints;
-	}
-	public void setDbConstraints(String dbConstraints) {
-		this.dbConstraints = dbConstraints;
-	}
-	public String getDataType() {
-		return dataType;
-	}
-	public void setDataType(String dataType) {
-		this.dataType = dataType;
-	}
 	public boolean isArray() {
 		return array;
 	}
@@ -71,14 +49,4 @@ public class DbFieldData {
 	public void setValue(Object value) {
 		this.value = value;
 	}
-
-	public boolean isDbOverwrite() {
-		return dbOverwrite;
-	}
-
-	public void setDbOverwrite(boolean dbOverwrite) {
-		this.dbOverwrite = dbOverwrite;
-	}
-	
-	
 }

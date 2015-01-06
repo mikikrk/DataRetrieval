@@ -1,0 +1,7 @@
+<url address="sss">
+	<content as="abbreviated">
+                        <text>(linked to journal information)</text>
+                        <link type="text" path="2.parent/4.sibling/child/2.sibling/2.child" linkType="text" next="3.parent/sibling/child/2.sibling/2.child" terminator="#comment" terminatorType="name" terminatorPath="3.parent/sibling"/>
+                        <nextPageLink type="img" value="Next Page"/>
+                    </content>
+</url>

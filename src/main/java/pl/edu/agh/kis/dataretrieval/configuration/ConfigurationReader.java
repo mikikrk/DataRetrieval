@@ -28,7 +28,7 @@ public abstract class ConfigurationReader {
 			.asList("bool,boolean,byte,char,character,double,float,int,integer,long,short,string"
 					.split(","));
 	protected static final String PATH_REGEX = "(this|(\\d*\\.?(parent|sibling|nextsibling|prevsibling|child|firstchild|lastchild)/)*(\\d*\\.?(parent|sibling|nextsibling|prevsibling|child|firstchild|lastchild))|attr)";
-	protected static final List<String> SQL_TYPES = Arrays.asList("array,bigint,binary,bit,blob,boolean,char,clob,datalink,date,decimal,distinct,double,float,integer,jaba_object,longvarchar,longvarbinary,nchar,nclob,null,numeric,nvarchar,other,real,ref,rowid,smallint,sqlxml,struct,time,timestamp,tinyint,varbinary,varchar".split(","));
+	protected static final List<String> SQL_TYPES = Arrays.asList("array,bigint,binary,bit,blob,boolean,char,clob,datalink,date,decimal,distinct,double,float,integer,jaba_object,longvarchar,longvarbinary,nchar,nclob,null,numeric,nvarchar,other,real,ref,rowid,smallint,sqlxml,struct,text,time,timestamp,tinyint,varbinary,varchar".split(","));
 	protected static final List<String> ALLOWED_TYPES = Arrays.asList("TEXT,TEXTAREA,CHECKBOX,COMBOBOX,LIST,RADIO".split(","));
 	
 	public abstract String parse(Document dom);

@@ -26,18 +26,18 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import pl.edu.agh.kis.dataretrieval.flow.FlowManager;
 import pl.edu.agh.kis.dataretrieval.gui.ConfigHelper;
 import pl.edu.agh.kis.dataretrieval.gui.FilePathHolder;
-import pl.edu.agh.kis.dataretrieval.retriever.SiteRetriever;
 
 
 public class StartWindow extends JFrame {
 	
 	private JPanel contentPane;
-	private JList<FilePathHolder> crawlingList;
+	private JList<FilePathHolder> retrievingList;
 	private JList<FilePathHolder> searchingList;
 	private JScrollPane searchingScrollPane;
-	private JScrollPane crawlingScrollPane;
+	private JScrollPane retrievingScrollPane;
 	
 	private final StartWindow thisWindow = this;
 
@@ -45,6 +45,7 @@ public class StartWindow extends JFrame {
 	 * Create the frame.
 	 */
 	public StartWindow() {
+		setTitle("Data retrieval system");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 458, 472);
 		contentPane = new JPanel();
@@ -52,14 +53,14 @@ public class StartWindow extends JFrame {
 		setContentPane(contentPane);
 		
 		final JLabel searchingLabel = new JLabel("Searching configurations");
-		final JLabel crawlingLabel = new JLabel("Crawling configurations");
+		final JLabel crawlingLabel = new JLabel("Retrieving configurations");
 		
 		searchingList = new JList<FilePathHolder>();
 		searchingList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		searchingScrollPane = new JScrollPane(searchingList);
-		crawlingList = new JList<FilePathHolder>();
-		crawlingList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		crawlingScrollPane = new JScrollPane(crawlingList);
+		retrievingList = new JList<FilePathHolder>();
+		retrievingList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		retrievingScrollPane = new JScrollPane(retrievingList);
 		
 		refreshConfigLists();
 		
@@ -81,7 +82,7 @@ public class StartWindow extends JFrame {
 		addCrawlingConfigButton.setMaximumSize(new Dimension(75, 23));
 		addCrawlingConfigButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				addNewConfigFile(ConfigHelper.ConfigType.CRAWLING);
+				addNewConfigFile(ConfigHelper.ConfigType.RETRIEVING);
 				refreshConfigLists();
 			}
 		});
@@ -109,7 +110,7 @@ public class StartWindow extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
 					public void run(){
-						ConfigWindow configWindow = new ConfigWindow(thisWindow, ConfigHelper.Type.EDIT, ConfigHelper.ConfigType.CRAWLING, (FilePathHolder) crawlingList.getSelectedValue());
+						ConfigWindow configWindow = new ConfigWindow(thisWindow, ConfigHelper.Type.EDIT, ConfigHelper.ConfigType.RETRIEVING, (FilePathHolder) retrievingList.getSelectedValue());
 						configWindow.setVisible(true);
 					}
 				}.start();
@@ -139,7 +140,7 @@ public class StartWindow extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
 					public void run(){
-						ConfigWindow configWindow = new ConfigWindow(thisWindow, ConfigHelper.Type.DISPLAY, ConfigHelper.ConfigType.CRAWLING, (FilePathHolder) crawlingList.getSelectedValue());
+						ConfigWindow configWindow = new ConfigWindow(thisWindow, ConfigHelper.Type.DISPLAY, ConfigHelper.ConfigType.RETRIEVING, (FilePathHolder) retrievingList.getSelectedValue());
 						configWindow.setVisible(true);
 					}
 				}.start();
@@ -169,7 +170,7 @@ public class StartWindow extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				new Thread(){
 					public void run(){
-						ConfigWindow configWindow = new ConfigWindow(thisWindow, ConfigHelper.Type.CREATE, ConfigHelper.ConfigType.CRAWLING);
+						ConfigWindow configWindow = new ConfigWindow(thisWindow, ConfigHelper.Type.CREATE, ConfigHelper.ConfigType.RETRIEVING);
 						configWindow.setVisible(true);
 					}
 				}.start();
@@ -213,7 +214,7 @@ public class StartWindow extends JFrame {
 		deleteCrawlingConfigBtn.setMinimumSize(new Dimension(75, 23));
 		deleteCrawlingConfigBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				deleteConfig(((FilePathHolder) crawlingList.getSelectedValue()).getFilePath(), ConfigHelper.ConfigType.CRAWLING);
+				deleteConfig(((FilePathHolder) retrievingList.getSelectedValue()).getFilePath(), ConfigHelper.ConfigType.RETRIEVING);
 				refreshConfigLists();
 			}
 		});
@@ -239,7 +240,7 @@ public class StartWindow extends JFrame {
 							.addComponent(displayCrawlingConfigBtn, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 							.addPreferredGap(ComponentPlacement.RELATED)
 							.addComponent(deleteCrawlingConfigBtn, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-						.addComponent(crawlingScrollPane)
+						.addComponent(retrievingScrollPane)
 						.addGroup(gl_contentPane.createSequentialGroup()
 							.addComponent(newSearchingConfigBtn, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 							.addPreferredGap(ComponentPlacement.RELATED)
@@ -271,7 +272,7 @@ public class StartWindow extends JFrame {
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addComponent(crawlingLabel)
 					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(crawlingScrollPane, GroupLayout.PREFERRED_SIZE, 124, GroupLayout.PREFERRED_SIZE)
+					.addComponent(retrievingScrollPane, GroupLayout.PREFERRED_SIZE, 124, GroupLayout.PREFERRED_SIZE)
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
 						.addComponent(addCrawlingConfigButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -306,7 +307,7 @@ public class StartWindow extends JFrame {
 	
 	void refreshConfigLists(){
 		loadConfigFilesList(searchingList, ConfigHelper.SEARCHING_LIST_PATH);
-		loadConfigFilesList(crawlingList, ConfigHelper.CRAWLING_LIST_PATH);
+		loadConfigFilesList(retrievingList, ConfigHelper.RETRIEVING_LIST_PATH);
 	}
 	
 	private void loadConfigFilesList(JList<FilePathHolder> configList, String filePath){
@@ -364,7 +365,7 @@ public class StartWindow extends JFrame {
 		if(type.equals(ConfigHelper.ConfigType.SEARCHING)){
 			deleteConfigFromList(filePath, ConfigHelper.SEARCHING_LIST_PATH);
 		}else{
-			deleteConfigFromList(filePath, ConfigHelper.CRAWLING_LIST_PATH);
+			deleteConfigFromList(filePath, ConfigHelper.RETRIEVING_LIST_PATH);
 		}
 	}
 	
@@ -383,10 +384,10 @@ public class StartWindow extends JFrame {
 	}
 	
 	private void startRetrieving(boolean bulkMode){
-		if (searchingList.getSelectedValue() != null && crawlingList.getSelectedValue() != null){
+		if (searchingList.getSelectedValue() != null && retrievingList.getSelectedValue() != null){
 			String searchingConfigPath = searchingList.getSelectedValue().getFilePath();
-			String crawlingConfigPath = crawlingList.getSelectedValue().getFilePath();
-			SiteRetriever siteSearcher = new SiteRetriever(searchingConfigPath, crawlingConfigPath, true, bulkMode);
+			String crawlingConfigPath = retrievingList.getSelectedValue().getFilePath();
+			FlowManager siteSearcher = new FlowManager(searchingConfigPath, crawlingConfigPath, true, bulkMode);
 			new Thread(siteSearcher).start();
 			closeWindow();
 		}else{
