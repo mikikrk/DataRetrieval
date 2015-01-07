@@ -393,7 +393,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			if (!(attrs.getNamedItem("name") != null
 					|| attrs.getNamedItem("id") != null || attrs
 						.getNamedItem("no") != null)) {
-				message.append("Attribute \'name\', \'id\' or \'no\' is neccessary in node \'form\'\n");
+				message.append("Attributes \'name\', \'id\' or \'no\' are neccessary in node \'form\'\n");
 			} else {
 				for (int i = 0; i < attrs.getLength(); i++) {
 					if (!attrs.item(i).getNodeName().equals("name")
@@ -409,6 +409,24 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 								+ "\' in node \'form\'\n");
 					}
 				}
+				if ((attrs.getNamedItem("name") != null
+							&& attrs.getNamedItem("id") != null)
+						|| (attrs.getNamedItem("name") != null
+							&& attrs.getNamedItem("no") != null)
+						|| attrs.getNamedItem("no") != null
+							&& attrs.getNamedItem("id") != null
+						){
+					message.append("Only one of attributes: \'name\', \'id\', \'no\' can be used in \'fomr\' node");
+				}
+				if ((attrs.getNamedItem("buttonName") != null
+						&& attrs.getNamedItem("buttonId") != null)
+					|| (attrs.getNamedItem("buttonName") != null
+						&& attrs.getNamedItem("buttonNo") != null)
+					|| (attrs.getNamedItem("buttonNo") != null
+						&& attrs.getNamedItem("buttonId") != null)
+					){
+				message.append("Only one of attributes: \'buttonName\', \'buttonId\', \'buttonNo\' can be used in \'fomr\' node");
+			}
 			}
 			if (attrs.getNamedItem("no") != null
 					&& !attrs.getNamedItem("no").getNodeValue().matches("\\d+")) {
@@ -455,13 +473,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		NamedNodeMap fieldAttrs = fieldNode.getAttributes();
 
 		for (int i = 0; i < fieldAttrs.getLength(); i++) {
-			if (fieldAttrs.item(i).getNodeName().equals("type")) {
-				if (ALLOWED_TYPES.contains(fieldAttrs.item(i).getNodeValue()
-						.toUpperCase())) {
-					message.append("Wrong type value in \'"
-							+ fieldNode.getNodeName() + "\'\n");
-				}
-			} else if (fieldAttrs.item(i).getNodeName().equals("options")) {
+			if (fieldAttrs.item(i).getNodeName().equals("options")) {
 				if (!fieldAttrs.item(i).getNodeValue().matches(".+(;.+)*")) {
 					message.append("Wrong options value in \'"
 							+ fieldNode.getNodeName() + "\'\n");
@@ -492,7 +504,12 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		NamedNodeMap attrs = contentNode.getAttributes();
 		if (attrs.getNamedItem("ref") == null){
 			if (attrs.getNamedItem("as") != null){
+				if (attrs.getLength() != 1){
+					message.append("'Content' node cannot has another attributes then \'ref\' or \'as\'");
+				}
 				references.put("content"+ attrs.getNamedItem("as").getNodeValue(), null);
+			}else if (attrs.getLength() != 0){
+				message.append("'Content' node cannot has another attributes then \'ref\' or \'as\'");
 			}
 			Node node = contentNode.getFirstChild();
 			parseBenchmarkNode(node, message);
@@ -539,16 +556,16 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 	private void parseBenchmarkNode(Node node, StringBuilder message) {
 		NamedNodeMap attrs = node.getAttributes();
 		if (node.getNodeName().equals("xpath")
-				&& node.getAttributes().getLength() > 0) {
+				&& node.getAttributes().getLength() > 1 || (node.getAttributes().getLength() == 1 && node.getAttributes().getNamedItem("no") != null)) {
 			message.append("Wrong attributes for node \'xpath\' in "
 					+ node.getParentNode().getNodeName() + "\n");
-		}
-		if ((node.getNodeName().equals("text") || node.getNodeName().equals(
-				"comment"))
-				&& attrs.getNamedItem("attr") != null) {
-			message.append("Node \'" + node.getNodeName() + "\' of \'"
-					+ node.getParentNode().getNodeName()
-					+ "\' cannot have attribute \'attr\'\n");
+		} else if (node.getNodeName().equals("text")
+				&& node.getAttributes().getLength() > 1 || (node.getAttributes().getLength() == 1 && node.getAttributes().getNamedItem("no") != null)) {
+			message.append("Wrong attributes for node \'text\' in "
+					+ node.getParentNode().getNodeName() + "\n");
+		} else if (node.getAttributes().getLength() > 2 ||  (node.getAttributes().getLength() == 2 && node.getAttributes().getNamedItem("no") != null && node.getAttributes().getNamedItem("attr") != null) || (node.getAttributes().getLength() == 1 && (node.getAttributes().getNamedItem("no") != null && node.getAttributes().getNamedItem("attr") != null))){
+			message.append("Wrong attributes for node \'" + node.getNodeName() + "\' in "
+					+ node.getParentNode().getNodeName() + "\n");
 		}
 		if (attrs.getNamedItem("no") != null
 				&& !(attrs.getNamedItem("no").getNodeValue().matches("\\d+"))) {

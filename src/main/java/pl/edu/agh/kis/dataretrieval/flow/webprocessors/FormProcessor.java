@@ -449,7 +449,7 @@ public class FormProcessor {
 							+ formData.getButtonName() + "\' does not exist");
 				}
 			}
-			return submit(form, null);
+			return submit(form, button);
 		} catch (Exception e) {// SAXException, IOException
 			throw new RetrievalException("Error occured while submiting form");
 		}
