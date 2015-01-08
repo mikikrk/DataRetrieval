@@ -1,22 +1,22 @@
 <url address="http://admin-apps.webofknowledge.com/JCR/JCR?SID" >
     <link type="text" value="establish a new session" />
 
-    <form name="limits" buttonName="Submit" as="first">
+    <form name="limits" as="form1">
         <edition values="$every$" options="JCR Science Edition;JCR Social Sciences Edition"/>
-        <science_year values="2013">JCR Science Edition Year</science_year>
-        <social_year values="2013">JCR Social Sciences Edition Year</social_year>
+        <science_year>JCR Science Edition Year</science_year>
+        <social_year>JCR Social Sciences Edition Year</social_year>
         <RQ values="View all journals" options="View a group of journals by;Search for a specific journal;View all journals"/>
         <view>View a group of journals by options:</view>
     </form>
-    <switch field1="first.RQ">
+    <switch field1="form1.RQ">
         <case values1="View a group of journals by">
-            <form no="1" as="form1">
+            <form no="1" as="form2">
                 <query_data>Select one or more categories from the list.</query_data>
                 <RQ> Select to view Journal data or aggregate Category data.</RQ>
                 <journal_sort_by/>
                 <category_sort_by/>
             </form>
-            <switch field="form1.RQ">
+            <switch field="form2.RQ">
                 <case values="LIST_SUMMARY_JOURNAL">
                     <content as="abbreviated">
                         <text>(linked to journal information)</text>
@@ -44,21 +44,4 @@
             <content ref="abbreviated"/>
         </case>
     </switch>
-    
-    
-<!--     <form no="1" buttonName="btn"> -->
-<!--         <Fname type="text" usedValues="Nowak;Jakubas">First Name:</Fname> -->
-<!--         <Lname>Last Name:</Lname> -->
-<!--         <gender options="Male;Female" usedValues="Male;Female">Gender:</gender> -->
-<!--         <food name="food[]" >Favorite food</food>  -->
-<!--         <quote value="aaA"/> -->
-<!--         <education>Select a Level of Education:</education> -->
-<!--         <TofD>Select your favorite time of day:</TofD> -->
-<!--     </form> -->
-        
-<!--     <content> -->
-<!--         <text>Pattern</text> -->
-<!--         <link type="img" linkType="?name/id/text?" path="parent" next="sibling" terminator="null" terminatorType="null" terminatorPath="2.parent/sibling"/> -->
-<!--         <nextPageLink type="img" value="next page"/> -->
-<!--     </content> -->
 </url>
