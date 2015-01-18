@@ -21,7 +21,7 @@ public class FormFieldData {
 	private List<String> optionsDescriptions = new ArrayList<String>();
 	
 //	for bulk run
-	private List<String> usedValues = new ArrayList<String>();
+	private String lastUsedValues = new String();
 	
 //	from site
 	private FieldType fieldType;
@@ -143,27 +143,13 @@ public class FormFieldData {
 		this.formFieldName = formFieldName;
 	}
 
-	public List<String> getUsedValues() {
-		return usedValues;
+	public String getLastUsedValues() {
+		return lastUsedValues;
 	}
 
-	public void setUsedValues(List<String> usedValues) {
-		this.usedValues = usedValues;
+	public void setLastUsedValues(String lastUsedValue) {
+		this.lastUsedValues = lastUsedValue;
 	}
-	
-	public void addUsedValues(List<String> usedValues) {
-		this.usedValues.addAll(usedValues);
-	}
-	
-	
-	public void addUsedValue(String usedValue) {
-		this.usedValues.add(usedValue);
-	}
-
-	public void clearUsedValues(){
-		this.usedValues.clear();
-	}
-
 	public List<String> getDefaultValues() {
 		return defaultValues;
 	}

@@ -10,7 +10,7 @@ import pl.edu.agh.kis.dataretrieval.configuration.ConfigData;
 public class SearchingData {
 	private String url;
 	private int maxRecords;
-	private int crawledSites;
+	private int startSite;
 
 	private List<ConfigData> flowDataList = new ArrayList<ConfigData>();
 
@@ -64,12 +64,12 @@ public class SearchingData {
 		index = 0;
 	}
 
-	public int getCrawledSites() {
-		return crawledSites;
+	public int getStartSite() {
+		return startSite;
 	}
 
-	public void setCrawledSites(int crawledSites) {
-		this.crawledSites = crawledSites;
+	public void setStartSite(int startSite) {
+		this.startSite = startSite;
 	}
 	
 }

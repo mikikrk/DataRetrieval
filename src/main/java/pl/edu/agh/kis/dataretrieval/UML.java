@@ -6,7 +6,7 @@ package pl.edu.agh.kis.dataretrieval;
  * Use Cases
  * @startuml
 
-:Urzutkownik: as user
+:U¿ytkownik: as user
 :Baza danych: as db
 :Strona internetowa: as site
 left to right direction

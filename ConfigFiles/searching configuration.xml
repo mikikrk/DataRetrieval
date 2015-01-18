@@ -1,47 +1,47 @@
-<url address="http://admin-apps.webofknowledge.com/JCR/JCR?SID" >
-    <link type="text" value="establish a new session" />
-
-    <form name="limits" as="form1">
-        <edition values="$every$" options="JCR Science Edition;JCR Social Sciences Edition"/>
-        <science_year>JCR Science Edition Year</science_year>
-        <social_year>JCR Social Sciences Edition Year</social_year>
-        <RQ values="View all journals" options="View a group of journals by;Search for a specific journal;View all journals"/>
-        <view>View a group of journals by options:</view>
-    </form>
-    <switch field1="form1.RQ">
-        <case values1="View a group of journals by">
-            <form no="1" as="form2">
-                <query_data>Select one or more categories from the list.</query_data>
-                <RQ> Select to view Journal data or aggregate Category data.</RQ>
-                <journal_sort_by/>
-                <category_sort_by/>
-            </form>
-            <switch field="form2.RQ">
-                <case values="LIST_SUMMARY_JOURNAL">
-                    <content as="abbreviated">
-                        <text>(linked to journal information)</text>
-                        <link type="text" path="2.parent/4.sibling/child/2.sibling/2.child" linkType="text" next="3.parent/sibling/child/2.sibling/2.child" terminator="#comment" terminatorType="name" terminatorPath="3.parent/sibling"/>
-                        <nextPageLink type="img" value="Next Page"/>
-                    </content>
-                </case>
-                <default>
-                    <content as="category">
-                        <text>Category</text>
-                        <link type="text" path="2.parent/4.sibling/child/2.sibling/2.child" linkType="text" next="3.parent/sibling/child/2.sibling/2.child" terminator="#comment" terminatorType="name" terminatorPath="3.parent/sibling"/>
-                        <nextPageLink type="img" value="Next Page"/>
-                    </content>
-                </default>
-            </switch>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<url address="http://admin-apps.webofknowledge.com/JCR/JCR?SID" maxRecords="100" startSite="106">
+  <link type="text" value="establish a new session"/>
+  <form as="form1" name="limits">
+    <edition lastUsedValues="$every$" options="JCR Science Edition;JCR Social Sciences Edition" values="$every$"/>
+    <science_year>JCR Science Edition Year</science_year>
+    <social_year>JCR Social Sciences Edition Year</social_year>
+    <RQ lastUsedValues="View all journals" options="View a group of journals by;Search for a specific journal;View all journals" values="View all journals"/>
+    <view>View a group of journals by options:</view>
+  </form>
+  <switch field1="form1.RQ">
+    <case values1="View a group of journals by">
+      <form as="form2" no="1">
+        <query_data>Select one or more categories from the list.</query_data>
+        <RQ> Select to view Journal data or aggregate Category data.</RQ>
+        <journal_sort_by/>
+        <category_sort_by/>
+      </form>
+      <switch field="form2.RQ">
+        <case values="LIST_SUMMARY_JOURNAL">
+          <content as="abbreviated">
+            <text>(linked to journal information)</text>
+            <link linkType="text" next="3.parent/sibling/child/2.sibling/2.child" path="2.parent/4.sibling/child/2.sibling/2.child" terminator="#comment" terminatorPath="3.parent/sibling" terminatorType="name" type="text"/>
+            <nextPageLink type="img" value="Next Page"/>
+          </content>
         </case>
-        <case values1="Search for a specific journal">
-            <form no="1">
-                <query_type/>
-                <query_data/>
-            </form>
-            <content ref="abbreviated"/>
-        </case>
-        <case values1="View all journals">
-            <content ref="abbreviated"/>
-        </case>
-    </switch>
+        <default>
+          <content as="category">
+            <text>Category</text>
+            <link linkType="text" next="3.parent/sibling/child/2.sibling/2.child" path="2.parent/4.sibling/child/2.sibling/2.child" terminator="#comment" terminatorPath="3.parent/sibling" terminatorType="name" type="text"/>
+            <nextPageLink type="img" value="Next Page"/>
+          </content>
+        </default>
+      </switch>
+    </case>
+    <case values1="Search for a specific journal">
+      <form no="1">
+        <query_type/>
+        <query_data/>
+      </form>
+      <content ref="abbreviated"/>
+    </case>
+    <case values1="View all journals">
+      <content ref="abbreviated"/>
+    </case>
+  </switch>
 </url>

@@ -71,12 +71,12 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		} else {
 			searchingData.setMaxRecords(-1);
 		}
-		if (urlAttrs.getNamedItem("crawledSites") != null) {
-			searchingData.setCrawledSites(
-					Integer.valueOf(urlAttrs.getNamedItem("crawledSites")
+		if (urlAttrs.getNamedItem("startSite") != null) {
+			searchingData.setStartSite(
+					Integer.valueOf(urlAttrs.getNamedItem("startSite")
 							.getNodeValue()));
 		} else {
-			searchingData.setCrawledSites(0);
+			searchingData.setStartSite(1);
 		}
 	}
 	
@@ -212,9 +212,9 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			fieldData.addAlternativeDefaultValues(Arrays.asList(fieldAttrs.getNamedItem("values")
 					.getNodeValue().split("\\|")));
 		}
-		if (fieldAttrs.getNamedItem("usedValues") != null) {
-			fieldData.addUsedValues(Arrays.asList(fieldAttrs
-					.getNamedItem("usedValues").getNodeValue().split("\\|")));
+		if (fieldAttrs.getNamedItem("lastUsedValues") != null) {
+			fieldData.setLastUsedValues(fieldAttrs
+					.getNamedItem("lastUsedValues").getNodeValue());
 		}
 		if (fieldNode.hasChildNodes()) {
 			fieldData.setDescription(fieldNode.getFirstChild().getNodeValue());
@@ -341,7 +341,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			for (int i = 0; i < attrs.getLength(); i++) {
 				if (!attrs.item(i).getNodeName().equals("address")
 						&& !attrs.item(i).getNodeName().equals("maxRecords")
-						&& !attrs.item(i).getNodeName().equals("crawledSites")) {
+						&& !attrs.item(i).getNodeName().equals("startSite")) {
 					message.append("Wrong attribute \'"
 							+ attrs.item(i).getNodeName()
 							+ "\' in node \'url\'\n");
@@ -353,10 +353,10 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 						.getNodeValue().matches("\\d+")) {
 			message.append("Max records must be an integer\n");
 		}
-		if (urlNode.getAttributes().getNamedItem("crawledSites") != null
-				&& !urlNode.getAttributes().getNamedItem("crawledSites")
+		if (urlNode.getAttributes().getNamedItem("startSite") != null
+				&& !urlNode.getAttributes().getNamedItem("startSite")
 						.getNodeValue().matches("\\d+")) {
-			message.append("Crawled sites must be an integer\n");
+			message.append("Start site value must be an integer\n");
 		}
 		if (urlNode.getNextSibling() != null){
 			message.append("Node \'url\' cannot has any sibling");
@@ -483,7 +483,7 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 					message.append("Wrong \'values\' value in \'"
 							+ fieldNode.getNodeName() + "\'\n");
 				}
-			} else if (!fieldAttrs.item(i).getNodeName().equals("usedValues")
+			} else if (!fieldAttrs.item(i).getNodeName().equals("lastUsedValues")
 					&& !fieldAttrs.item(i).getNodeName().equals("name")) {
 				message.append("Wrong attribute \'"
 						+ fieldAttrs.item(i).getNodeName()
@@ -567,6 +567,13 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 			message.append("Wrong attributes for node \'" + node.getNodeName() + "\' in "
 					+ node.getParentNode().getNodeName() + "\n");
 		}
+		if (!node.getNodeName().equals("xpath") && !node.getNodeName().equals("text") && node.getAttributes().getNamedItem("attr") == null && node.hasChildNodes()){
+			message.append("Node " + node.getNodeName() + " without attribute \'attr\' cannot has child\n");
+		}else{
+			if (!node.hasChildNodes()){
+				message.append("Node \'" + node.getNodeName() + "\' has to have text child\n");
+			}
+		}
 		if (attrs.getNamedItem("no") != null
 				&& !(attrs.getNamedItem("no").getNodeValue().matches("\\d+"))) {
 			message.append("Wrong value of attribute \'no\' in node \'"
@@ -622,25 +629,33 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 								+ "\' of \'"
 								+ node.getParentNode().getNodeName() + "\'\n");
 					}
-					if (((!attrs.getNamedItem("terminatorPath").getNodeValue()
-							.toLowerCase().endsWith("attr")) || !attrs
-							.getNamedItem("path").getNodeValue()
-							.endsWith("attr"))
-							&& !attrs.getNamedItem("terminatorType")
-									.getNodeValue().equals("text")
-							&& !attrs.getNamedItem("terminatorType")
-									.getNodeValue().equals("value")
-							&& !attrs.getNamedItem("terminatorType")
-									.getNodeValue().equals("name")
-							&& !attrs.getNamedItem("terminatorType")
-									.getNodeValue().equals("null")) {
-						message.append("Wrong value of attribute \'terminatorType\' in node \'\n"
-								+ node.getNodeName()
-								+ "\' of \'"
-								+ node.getParentNode().getNodeName() + "\'\n");
-					}
 				}
-
+				if ((attrs.getNamedItem("terminatorPath") != null && 
+						!attrs.getNamedItem("terminatorPath").getNodeValue()
+							.toLowerCase().endsWith("attr")) 
+					|| (attrs.getNamedItem("terminatorPath") == null && 
+						attrs.getNamedItem("next") != null &&
+						!attrs.getNamedItem("next").getNodeValue()
+							.toLowerCase().endsWith("attr")) 
+					|| (attrs.getNamedItem("terminatorPath") == null && 
+							attrs.getNamedItem("next") == null &&
+							!attrs.getNamedItem("path").getNodeValue()
+								.toLowerCase().endsWith("attr")) 
+					){
+						if (!attrs.getNamedItem("terminatorType")
+										.getNodeValue().equals("text")
+								&& !attrs.getNamedItem("terminatorType")
+										.getNodeValue().equals("value")
+								&& !attrs.getNamedItem("terminatorType")
+										.getNodeValue().equals("name")
+								&& !attrs.getNamedItem("terminatorType")
+										.getNodeValue().equals("null")) {
+							message.append("Wrong value of attribute \'terminatorType\' in node \'\n"
+									+ node.getNodeName()
+									+ "\' of \'"
+									+ node.getParentNode().getNodeName() + "\'\n");
+						}
+					}
 			} else {
 				if (node.getAttributes().getNamedItem("terminatorType") != null
 						|| node.getAttributes().getNamedItem("terminatorPath") != null) {

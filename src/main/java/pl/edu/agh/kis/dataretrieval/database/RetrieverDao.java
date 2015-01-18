@@ -1,6 +1,7 @@
 package pl.edu.agh.kis.dataretrieval.database;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -68,13 +69,41 @@ public class RetrieverDao {
 		  }
 		}
 		if (siteData.get(0).isDbOverwrite() || !exists){
+			boolean isDefinedPrimaryKey = false;
 			Statement statement = connection.createStatement();
 			statement.execute("DROP TABLE IF EXISTS " + tableName);
 			
-			StringBuilder sql = new StringBuilder("CREATE TABLE " + tableName + "( url text PRIMARY KEY,");
-			for (RetrievingData columnData: siteData){
-				sql.append(columnData.getDbColName() + " " + columnData.getDbColType() + " " + columnData.getDbConstraints() + ", ");
+			StringBuilder sql = new StringBuilder("CREATE TABLE " + tableName + "( ");
+			if (siteData.get(0).isDbAddUrl() || siteData.get(0).isDbUrlAsPrimaryKey()){
+				sql.append("url TEXT");
+				if (siteData.get(0).isDbUrlAsPrimaryKey()){
+					sql.append(" PRIMARY KEY, ");
+					isDefinedPrimaryKey = true;
+				}else{
+					sql.append(", ");
+				}
 			}
+			for (int i = 0; i < siteData.size(); i++){
+				RetrievingData columnData = siteData.get(i);
+				sql.append(columnData.getDbColName() + " " + columnData.getDbColType() + " " + columnData.getDbConstraints() + ", ");
+				if (columnData.getDbConstraints().toUpperCase().contains("PRIMARY KEY")){
+					isDefinedPrimaryKey = true;
+				}
+				if (columnData.isOnlyDbData()){
+					siteData.remove(i--);
+				}
+			}
+			String tableConstraints = siteData.get(0).getDbTableConstraints();
+			if (tableConstraints != null && tableConstraints.toUpperCase().contains("PRIMARY KEY")){
+				isDefinedPrimaryKey = true;
+			}
+			if (isDefinedPrimaryKey == false){
+				sql.append("id SERIAL PRIMARY KEY, ");
+			}
+			if (tableConstraints != null && !tableConstraints.isEmpty()){
+				sql.append(tableConstraints + ", ");
+				
+			};
 			sql.setCharAt(sql.length() - 2, ')');
 			sql.append(";");
 			statement.execute(sql.toString());
@@ -87,7 +116,7 @@ public class RetrieverDao {
 			while (statement == null){
 				statement = connection.prepareStatement(prepareSql4AddSiteData(tableName, siteData));
 			}
-			prepareStatement(statement, siteData);
+			prepareStatement(statement, siteData, null);
 			statement.execute();
 		} catch (SQLException e) {
 			if (!e.getSQLState().equals("23505")){	//DUPLICATE KEY mo¿e byæ próba wsadzania tego samego rakordu ponownie, która jest ignorowana, poniewa¿ w kilku wyszukaniach mo¿e byæ ten sam rekord
@@ -103,7 +132,13 @@ public class RetrieverDao {
 		while (statement == null){
 			statement = connection.prepareStatement(prepareSql4UpdateSiteData(tableName, siteData));
 		}
-		prepareStatement(statement, siteData);
+		DbFieldData pk = null;
+		for (DbFieldData arg: siteData){
+			if (arg.isPrimaryKey()){
+				pk = arg;
+			}
+		}
+		prepareStatement(statement, siteData, pk);
 		statement.execute();
 	}
 	
@@ -120,29 +155,43 @@ public class RetrieverDao {
 		return sql.toString();
 	}
 	
-	private String prepareSql4UpdateSiteData(String tableName, List<DbFieldData> siteData){
-		StringBuilder sql = new StringBuilder("UPDATE " + tableName + "SET ");
-		String url = new String();
+	private String prepareSql4UpdateSiteData(String tableName, List<DbFieldData> siteData) throws SQLException{
+		StringBuilder sql = new StringBuilder("UPDATE " + tableName + " SET ");
+		DbFieldData pk = null;
 		for (DbFieldData field: siteData){
-			if (field.getDbColName().equals("url")){
-				url = (String) field.getValue();
+			if (field.isPrimaryKey()){
+				pk = field;
+			}else{
+				sql.append(field.getDbColName() + "=?, ");
 			}
-			sql.append(field.getDbColName() + "=?, ");
 		}
 		sql.deleteCharAt(sql.length() - 2);
-		sql.append("WHERE url=" + url);
+		if (pk != null){
+			sql.append("WHERE " + pk.getDbColName() + "=" + "?");
+		}else{
+			throw new SQLException("Error while indexing table. Value of column \'id\' was repeated.");
+		}
 		return sql.toString();
 	}
 	
-	private void prepareStatement(PreparedStatement statement, List<DbFieldData> data) throws SQLException{
+	private void prepareStatement(PreparedStatement statement, List<DbFieldData> data, DbFieldData pk) throws SQLException{
 		int i = 1;
 		for (DbFieldData arg: data){
-			if(arg.isArray()){
-				statement.setArray(i, connection.createArrayOf(arg.getDbColType().toLowerCase().substring(0, arg.getDbColType().indexOf('[')), ((List<Object>) arg.getValue()).toArray()));
-			}else{
-				statement.setObject(i, arg.getValue());
+			if(pk == null || !pk.equals(arg)){
+				if(arg.isArray()){
+					statement.setArray(i, connection.createArrayOf(arg.getDbColType().toLowerCase().substring(0, arg.getDbColType().indexOf('[')), ((List<Object>) arg.getValue()).toArray()));
+				}else{
+					statement.setObject(i, arg.getValue());
+				}
+				i++;
 			}
-			i++;
+		}
+		if (pk != null){	//dla update
+			if(pk.isArray()){
+				statement.setArray(i, connection.createArrayOf(pk.getDbColType().toLowerCase().substring(0, pk.getDbColType().indexOf('[')), ((List<Object>) pk.getValue()).toArray()));
+			}else{
+				statement.setObject(i, pk.getValue());
+			}
 		}
 	}
 	
