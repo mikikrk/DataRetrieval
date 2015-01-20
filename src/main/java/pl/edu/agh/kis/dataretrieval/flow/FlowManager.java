@@ -18,6 +18,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.ws.Holder;
 import javax.xml.xpath.XPathExpressionException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -286,6 +287,7 @@ public class FlowManager implements Runnable{
 				Node fieldNode = flowNode.getFirstChild();
 				for (FormFieldData fieldData: ((FormData) flowData).getFields()){
 					if (fieldData.getLastUsedValues() != null && !fieldData.getLastUsedValues().isEmpty()){
+						renameLastUsedValues(fieldData);
 						Node usedValues;
 						if((usedValues = fieldNode.getAttributes().getNamedItem("lastUsedValues")) == null){
 							usedValues = newLastUsedValues.cloneNode(false);
@@ -303,6 +305,12 @@ public class FlowManager implements Runnable{
 				}
 			}
 			flowNode = flowNode.getNextSibling();
+		}
+	}
+	
+	private void renameLastUsedValues(FormFieldData fieldData){
+		if (StringUtils.join(fieldData.getOptions(), ";").equals(fieldData.getLastUsedValues())){
+			fieldData.setLastUsedValues("$all$");
 		}
 	}
 	

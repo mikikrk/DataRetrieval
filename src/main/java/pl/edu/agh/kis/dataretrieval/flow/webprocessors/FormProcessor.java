@@ -344,8 +344,10 @@ public class FormProcessor {
 			if (!alternativeDefaultValues.isEmpty()) {
 				if (alternativeDefaultValues.get(0).equals("$all$")){
 					setAllValues(fieldData);
+					fieldData.setLastUsedValues(fieldData.getAlternativeDefaultValues().get(0));
 				}else if(alternativeDefaultValues.get(0).equals("$every$")){
 					setEveryValues(fieldData);
+					fieldData.setLastUsedValues(fieldData.getAlternativeDefaultValues().get(0));
 				}
 				List<String> defaultValues;
 				if (bulkMode) {
@@ -373,7 +375,9 @@ public class FormProcessor {
 	private static void setAllValues(FormFieldData fieldData){
 		List<String> options = fieldData.getOptionValues();
 		if (!options.isEmpty()){
-			fieldData.addDefaultValue(StringUtils.join(options, ";"));
+			List<String> allValues = new LinkedList<String> ();
+			allValues.add(StringUtils.join(options, ";"));
+			fieldData.setAlternativeDefaultValues(allValues);
 		}
 	}
 	

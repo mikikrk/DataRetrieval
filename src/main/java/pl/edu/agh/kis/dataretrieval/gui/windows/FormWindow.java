@@ -1,10 +1,10 @@
 package pl.edu.agh.kis.dataretrieval.gui.windows;
 
 import java.awt.Dimension;
-import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.ButtonGroup;
@@ -37,7 +37,6 @@ public class FormWindow extends JFrame {
 	public FormWindow(List<FormFieldData> fields) throws RetrievalException {
 		setTitle("Form");
 		this.fields = fields;
-		setLayout(new GridLayout(getRowsAmount(), 1));
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, getRowsAmount() * 30);
 		
@@ -55,6 +54,10 @@ public class FormWindow extends JFrame {
 	}
 	
 	private void addForms(List<FormFieldData> fields) throws RetrievalException{
+		GridBagLayout gridbag = new GridBagLayout();
+		GridBagConstraints constraints = new GridBagConstraints();
+		
+		setLayout(gridbag);
 		for(FormFieldData field: fields){
 			if(!field.getDescription().isEmpty()){
 				JLabel label = new JLabel(field.getDescription());
@@ -113,6 +116,8 @@ public class FormWindow extends JFrame {
 					list.setSelectedIndex(0);
 				}
 				JScrollPane jsp = new JScrollPane(list);
+				constraints.gridheight = field.getSize() - (field.getDescription().isEmpty() ? 0 : 1);
+				gridbag.setConstraints(jsp, constraints);
 				add(jsp);
 				field.setComponent(list);
 			}else if (field.getFieldType() != null && field.getFieldType().equals(FieldType.SELECT_MULTIPLE)){
@@ -138,6 +143,8 @@ public class FormWindow extends JFrame {
 				list.setListData(options);
 				list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 				JScrollPane jsp = new JScrollPane(list);
+				constraints.gridheight = field.getSize() - (field.getDescription().isEmpty() ? 0 : 1);
+				gridbag.setConstraints(jsp, constraints);
 				add(jsp);
 				field.setComponent(list);
 			}else if (field.getFieldType() != null && field.getFieldType().equals(FieldType.CHECKBOX)){
@@ -220,7 +227,10 @@ public class FormWindow extends JFrame {
 						throw new RetrievalException("Multiple default values are invalid for single selection list");
 					}
 				}
-				add(textArea);
+				JScrollPane jsp = new JScrollPane(textArea);
+				constraints.gridheight = 5;
+				gridbag.setConstraints(jsp, constraints);
+				add(jsp);
 				field.setComponent(textArea);
 			}
 		}

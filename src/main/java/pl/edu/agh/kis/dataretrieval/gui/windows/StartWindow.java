@@ -360,7 +360,10 @@ public class StartWindow extends JFrame {
 	
 	private void deleteConfig(String filePath, ConfigHelper.ConfigType type){
 		File file = new File(filePath);
-		file.delete();
+		YesNoDialog yesNo = new YesNoDialog("Do you want to delete configuration file also?");
+		if (yesNo.isYes()){
+			file.delete();
+		}
 		
 		if(type.equals(ConfigHelper.ConfigType.SEARCHING)){
 			deleteConfigFromList(filePath, ConfigHelper.SEARCHING_LIST_PATH);
