@@ -94,7 +94,7 @@ public class ContentProcessor {
 		if (iterator < sitesAmount){
 			return getSite(sitesBenchmarksOnMainSite.get(iterator++));
 		}else {
-			if(sitesAmount == 0){
+			if(sitesAmount != 0){
 				if (nextMainPageResp != null){
 					goToNextPage();
 					actualizeSitesBenchmarks();

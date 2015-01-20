@@ -86,77 +86,81 @@ public class FlowManager implements Runnable{
 			RetrievingConfigurationReader retrievingConfigReader = new RetrievingConfigurationReader();
 			List<RetrievingData> crawlingDataList = retrievingConfigReader.load(retrievingConfigPath);
 			RetrieverDao dao = new RetrieverDao(retrievingConfigPath);
-			dao.createTable(crawlingDataList);
-			WebResponse startPageResp = goToSite(searchingData.getUrl());
-			
-			int sitesLeft = searchingData.getMaxRecords();
-			int startLink = searchingData.getStartSite();
-			int iteration = 1;
-			int crawledSites;
-			boolean allBulkCombinations = false;
-			do {
-				crawledSites = 0;
-				if (bulkMode) {
-					if (iteration++ != 1){
-						startLink = 1; //w kolejnych iteracjach w trybie bulkowym strony maja byc juz pobierane od pocz¹tku
+			try{
+				dao.createTable(crawlingDataList);
+				WebResponse startPageResp = goToSite(searchingData.getUrl());
+				
+				int sitesLeft = searchingData.getMaxRecords();
+				int startLink = searchingData.getStartSite();
+				int iteration = 1;
+				int crawledSites;
+				boolean allBulkCombinations = false;
+				do {
+					crawledSites = 0;
+					if (bulkMode) {
+						if (iteration++ != 1){
+							startLink = 1; //w kolejnych iteracjach w trybie bulkowym strony maja byc juz pobierane od pocz¹tku
+						}
+						allBulkCombinations = FormProcessor.iterateUsedValues(searchingData, startLink);
 					}
-					allBulkCombinations = FormProcessor.iterateUsedValues(searchingData, startLink);
-				}
-				try{
-					resp = startPageResp;
-					progressWindow.printInfo("Finding sites with data");
-					ContentData contentData = goThroughtFlow(searchingData.getFlowDataList());
-					ContentProcessor contentProcessor = new ContentProcessor(resp, contentData, progressWindow, sitesLeft, startLink);
-					
-					while(contentProcessor.hasNextSite() && keepRetrieving.value == true){
-						progressWindow.pause();		//Sprawdza czy postêp zosta³ wstrzymany i jeœli tak to czeka na kontynuacje
-						try{
-							WebResponse siteResp = contentProcessor.findNextSite();
-							if (siteResp != null){
-								crawledSites++;
-								
-								Map<String, List<DbFieldData>> siteData;
-								try{
-									siteData = DataRetriever.readData(siteResp, crawlingDataList);
-								}catch(NotAllFieldsRetrievedException e){
-									siteData = e.getSiteData();
-									printError(e.getMessage());
+					try{
+						resp = startPageResp;
+						progressWindow.printInfo("Finding sites with data");
+						ContentData contentData = goThroughtFlow(searchingData.getFlowDataList());
+						ContentProcessor contentProcessor = new ContentProcessor(resp, contentData, progressWindow, sitesLeft, startLink);
+						
+						while(contentProcessor.hasNextSite() && keepRetrieving.value == true && (sitesLeft>0 || sitesLeft == -1)){
+							progressWindow.pause();		//Sprawdza czy postêp zosta³ wstrzymany i jeœli tak to czeka na kontynuacje
+							try{
+								WebResponse siteResp = contentProcessor.findNextSite();
+								if (siteResp != null){
+									if (sitesLeft != -1){
+										sitesLeft--;
+									}
+									crawledSites++;
+									
+									Map<String, List<DbFieldData>> siteData;
+									try{
+										siteData = DataRetriever.readData(siteResp, crawlingDataList);
+									}catch(NotAllFieldsRetrievedException e){
+										siteData = e.getSiteData();
+										printError(e.getMessage());
+									}
+									for (Entry<String, List<DbFieldData>> entry: siteData.entrySet()){
+									    dao.addSiteData(entry.getKey(), entry.getValue());
+									}
+									retrievingStarted = true;
 								}
-								for (Entry<String, List<DbFieldData>> entry: siteData.entrySet()){
-								    dao.addSiteData(entry.getKey(), entry.getValue());
-								}
-								retrievingStarted = true;
+							}catch(final Exception e){
+								handleException(e);
 							}
-						}catch(final Exception e){
-							handleException(e);
+						}
+					
+					}catch(NoSiteRetrievedException e){		//nie zosta³ pobrany ¿aden link
+						if (!bulkMode){	//zakladamy ze tryb bulkowy moze wyszukac konfiguracje, w ktorej nie ma ¿adnych wynikow wyszukiwania
+							throw e;
+						}else {
+							startLink = 1;
+							System.out.println("WARN: " + e.getMessage());
 						}
 					}
-				
-				}catch(NoSiteRetrievedException e){		//nie zosta³ pobrany ¿aden link
-					if (!bulkMode){	//zakladamy ze tryb bulkowy moze wyszukac konfiguracje, w ktorej nie ma ¿adnych wynikow wyszukiwania
-						throw e;
-					}else {
-						startLink = 1;
-						System.out.println("WARN: " + e.getMessage());
+				} while (bulkMode && !allBulkCombinations && sitesLeft > 0 && keepRetrieving.value == true);
+			
+				if (bulkMode){
+					String newConfig;
+					if (allBulkCombinations && sitesLeft > 0 && keepRetrieving.value == true){
+						removeBulkAttributes(searchingData);
+					}else{
+						actualizeConfiguration(searchingData, startLink + crawledSites);
 					}
 				}
-				if (sitesLeft != -1){
-					sitesLeft -= crawledSites;
-				}
-			} while (bulkMode && !allBulkCombinations && sitesLeft > 0 && keepRetrieving.value == true);
-			dao.closeConnection();
-			if (bulkMode){
-				String newConfig;
-				if (allBulkCombinations && sitesLeft > 0 && keepRetrieving.value == true){
-					removeBulkAttributes(searchingData);
-				}else{
-					actualizeConfiguration(searchingData, startLink + crawledSites);
-				}
+			}finally{
+				dao.closeConnection();
 			}
 		} catch (Exception e){
 			e.printStackTrace();
 			handleException(e);
-		}
+		} 
 		String endMessage;
 		if (retrievingStarted){
 			endMessage = "Retrieving has been finished";
@@ -171,6 +175,7 @@ public class FlowManager implements Runnable{
 				}
 			}.start();
 			
+			progressWindow.printInfo(endMessage);
 			PopUpDialog successDialog = new PopUpDialog(endMessage);
 			successDialog.setVisible(true);
 		}else{
