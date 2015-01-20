@@ -279,9 +279,6 @@ public class FormProcessor {
 		if (startLink == 1){
 			List<FormFieldData> fieldDataList = getAllFormFieldData(searchingData
 					.getFlowDataList());
-			if (fieldDataList.get(0).getDefaultValues().isEmpty()){
-				setDefaultValues(fieldDataList, true);
-			}
 			return iterateUsedValues(fieldDataList);
 		}else{
 			return false;
@@ -312,25 +309,21 @@ public class FormProcessor {
 		while (iterated == false && i < fieldDataList.size()) {
 			FormFieldData fieldData = fieldDataList.get(i++);
 			if (!fieldData.getAlternativeDefaultValues().isEmpty()) {
-				if (fieldData.getUsedValues().isEmpty() || fieldData.getUsedValues().containsAll(
-						fieldData.getAlternativeDefaultValues())) {
-					if (fieldData.getUsedValues().isEmpty()){
+				if (fieldData.getLastUsedValues() == null || fieldData.getLastUsedValues().isEmpty() || fieldData.getLastUsedValues().equals(
+						fieldData.getAlternativeDefaultValues().get(fieldData.getAlternativeDefaultValues().size()-1))) {
+					if (fieldData.getLastUsedValues() == null || fieldData.getLastUsedValues().isEmpty()){
 						newRetrieving = true;
 					}
-					fieldData.clearUsedValues();
-					fieldData.addUsedValue(fieldData
+					fieldData.setLastUsedValues(fieldData
 							.getAlternativeDefaultValues().get(0));
 				} else {
 					fieldData
-							.addUsedValue(fieldData
+							.setLastUsedValues(fieldData
 									.getAlternativeDefaultValues()
 									.get(fieldData
 											.getAlternativeDefaultValues()
 											.indexOf(
-													StringUtils.join(
-															fieldData
-																	.getDefaultValues(),
-															";")) + 1));
+													fieldData.getLastUsedValues()) + 1));
 					iterated = true;
 				}
 			}
@@ -356,13 +349,9 @@ public class FormProcessor {
 				}
 				List<String> defaultValues;
 				if (bulkMode) {
-					List<String> usedValues = fieldData.getUsedValues();
-					if (!usedValues.isEmpty()) {
-						if (usedValues.get(0).equals("$all$")){
-							setAllUsedValues(fieldData);
-						}
-						defaultValues = Arrays.asList(usedValues.get(
-								usedValues.size() - 1).split(";"));
+					String lastUsedValues = fieldData.getLastUsedValues();
+					if (lastUsedValues != null && !lastUsedValues.isEmpty()) {
+						defaultValues = Arrays.asList(lastUsedValues.split(";"));
 					} else {
 						defaultValues = Arrays.asList(alternativeDefaultValues
 								.get(0).split(";"));
@@ -388,14 +377,6 @@ public class FormProcessor {
 		}
 	}
 	
-	private static void setAllUsedValues(FormFieldData fieldData){
-		List<String> options = fieldData.getOptionValues();
-		if (!options.isEmpty()){
-			fieldData.addUsedValue(StringUtils.join(options, ";"));
-		}
-	}
-	
-	
 	private static List<String> renameDefaultValues(FormFieldData fieldData, List<String> defaultValues){
 		if (fieldData.getOptionsDescriptions().isEmpty()){
 			return defaultValues;
@@ -403,7 +384,7 @@ public class FormProcessor {
 			List<String> renamedValues = new LinkedList<String>();
 			for (String value: defaultValues){
 				int optionIndex = fieldData.getOptionsDescriptions().indexOf(value);
-				if (optionIndex != -1){
+				if (optionIndex != -1 && !fieldData.getOptions().isEmpty()){
 					renamedValues.add(fieldData.getOptions().get(optionIndex));
 				}else{
 					renamedValues.add(value);

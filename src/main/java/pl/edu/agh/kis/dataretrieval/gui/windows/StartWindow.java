@@ -188,10 +188,10 @@ public class StartWindow extends JFrame {
 			}
 		});
 		
-		JButton continueCrawlingBtn = new JButton("Continue crawling");
-		continueCrawlingBtn.setPreferredSize(new Dimension(155, 25));
-		continueCrawlingBtn.setMinimumSize(new Dimension(135, 23));
-		continueCrawlingBtn.addActionListener(new ActionListener() {
+		JButton startBulkModeBtn = new JButton("Start bulk mode");
+		startBulkModeBtn.setPreferredSize(new Dimension(155, 25));
+		startBulkModeBtn.setMinimumSize(new Dimension(135, 23));
+		startBulkModeBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				startRetrieving(true);
 			}
@@ -228,7 +228,7 @@ public class StartWindow extends JFrame {
 						.addGroup(gl_contentPane.createSequentialGroup()
 							.addComponent(forwardBtn, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(continueCrawlingBtn, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+							.addComponent(startBulkModeBtn, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 						.addComponent(crawlingLabel)
 						.addGroup(gl_contentPane.createSequentialGroup()
 							.addComponent(addCrawlingConfigButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -283,7 +283,7 @@ public class StartWindow extends JFrame {
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
 						.addComponent(forwardBtn, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-						.addComponent(continueCrawlingBtn, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+						.addComponent(startBulkModeBtn, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 					.addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
 		);
 		contentPane.setLayout(gl_contentPane);

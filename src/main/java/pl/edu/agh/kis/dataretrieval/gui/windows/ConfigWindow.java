@@ -212,17 +212,11 @@ public class ConfigWindow extends JFrame {
         }
 	}
 	
-	private void saveConfigToFile(String filePath){
+	private void saveConfigToFile(String filePath) throws FileNotFoundException{
 		PrintWriter writer = null;
-		try {
-			writer = new PrintWriter(filePath);
-			writer.print(configXml.getText());
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			writer.close();
-		}
+		writer = new PrintWriter(filePath);
+		writer.print(configXml.getText());
+		writer.close();
 	}
 	
 	private void displayConfigName(String configName){
@@ -251,7 +245,7 @@ public class ConfigWindow extends JFrame {
 					String message = configReader.parse(dom);
 					
 					if (!message.isEmpty()){
-						PopUpDialog errorDialog = new PopUpDialog("Error in parsing configuration coused by: " + message);
+						PopUpDialog errorDialog = new PopUpDialog("Error in parsing configuration coused by:\n" + message);
 						errorDialog.setVisible(true);
 					}else {
 						PopUpDialog errorDialog = new PopUpDialog("Configuration is written properly\n");
@@ -262,7 +256,7 @@ public class ConfigWindow extends JFrame {
 					PopUpDialog errorDialog = new PopUpDialog("Configuration is not proper xml file \n" + e.getMessage());
 					errorDialog.setVisible(true);
 				}catch (Exception e) {
-					PopUpDialog errorDialog = new PopUpDialog("There have occured error while reading configuration");
+					PopUpDialog errorDialog = new PopUpDialog("Error occured while reading configuration");
 					errorDialog.setVisible(true);
 				}
 			}

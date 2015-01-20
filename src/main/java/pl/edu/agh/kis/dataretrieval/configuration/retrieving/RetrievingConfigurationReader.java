@@ -49,21 +49,7 @@ public class RetrievingConfigurationReader extends ConfigurationReader{
 		Node tableNode = dom.getFirstChild().getFirstChild();
 		
 		while (tableNode != null) {	
-			String dbTableName = tableNode.getNodeName();
-			NamedNodeMap attrs = tableNode.getAttributes();
-			boolean overwrite;
-			if (attrs.getNamedItem("overwrite") != null){
-				overwrite = Boolean.valueOf(attrs.getNamedItem("overwrite").getNodeValue());
-			}else{
-				overwrite = false;
-			}
-			Node node = tableNode.getFirstChild();
-			while (node != null) {
-				RetrievingData configNode= loadConfigNode(node, dbTableName);
-				configNode.setDbOverwrite(overwrite);
-				configNodes.add(configNode);
-				node = node.getNextSibling();
-			}
+			loadTableNode(tableNode);
 			tableNode = tableNode.getNextSibling();
 		}
 		return configNodes;
@@ -82,13 +68,13 @@ public class RetrievingConfigurationReader extends ConfigurationReader{
 		DatabaseData dbData = new DatabaseData();
 		Document dom = loadDom(configFilePath);
 		StringBuilder message = new StringBuilder();
-		Node tableNode = dom.getFirstChild().getFirstChild();
-		parseFirstTableNode(tableNode, message);
+		Node configNode = dom.getFirstChild();
+		parseConfigNode(configNode, message);
 		if (message.length() != 0){
 			throw new RetrievalException("Error while parsing database data\n" + message.toString());
 		}
 		
-		NamedNodeMap attrs = tableNode.getAttributes();
+		NamedNodeMap attrs = configNode.getAttributes();
 		dbData.setHost(attrs.getNamedItem("host").getNodeValue());
 		dbData.setPort(Integer.valueOf(attrs.getNamedItem("port").getNodeValue()));
 		dbData.setDbname(attrs.getNamedItem("dbname").getNodeValue());
@@ -97,8 +83,45 @@ public class RetrievingConfigurationReader extends ConfigurationReader{
 		return dbData;
 	}
 	
-	private RetrievingData loadConfigNode(Node node, String dbTableName){
+	private void loadTableNode(Node tableNode){
+		String dbTableName = tableNode.getNodeName();
+		NamedNodeMap attrs = tableNode.getAttributes();
+		boolean overwrite;
+		boolean addUrl;
+		boolean urlAsPrimaryKey;
+		String tableConstraints = new String();
+		if (attrs.getNamedItem("overwrite") != null){
+			overwrite = Boolean.valueOf(attrs.getNamedItem("overwrite").getNodeValue());
+		}else{
+			overwrite = false;
+		}
+		if (attrs.getNamedItem("addUrl") != null){
+			addUrl = Boolean.valueOf(attrs.getNamedItem("addUrl").getNodeValue());
+		}else{
+			addUrl = false;
+		}
+		if (attrs.getNamedItem("urlAsPrimaryKey") != null){
+			urlAsPrimaryKey = Boolean.valueOf(attrs.getNamedItem("urlAsPrimaryKey").getNodeValue());
+		}else{
+			urlAsPrimaryKey = false;
+		}
+		if (attrs.getNamedItem("constraints") != null) {
+			tableConstraints = attrs.getNamedItem("constraints").getNodeValue();
+		}
+		Node node = tableNode.getFirstChild();
+		while (node != null) {
+			RetrievingData configNode= loadColumnNode(node, dbTableName, tableConstraints, overwrite, addUrl, urlAsPrimaryKey);
+			configNodes.add(configNode);
+			node = node.getNextSibling();
+		}
+	}
+	
+	private RetrievingData loadColumnNode(Node node, String dbTableName, String tableConstraints, boolean overwrite, boolean addUrl, boolean urlAsPrimaryKey){
 		RetrievingData data = new RetrievingData();
+		data.setDbOverwrite(overwrite);
+		data.setDbAddUrl(addUrl);
+		data.setDbTableConstraints(tableConstraints);
+		data.setDbUrlAsPrimaryKey(urlAsPrimaryKey);
 		data.setDbTableName(dbTableName);
 		if(node.getNodeName().equals("link")){
 			data.setDataType("link");
@@ -109,7 +132,7 @@ public class RetrievingConfigurationReader extends ConfigurationReader{
 			}
 			Node linkNode = node.getFirstChild();
 			while (linkNode != null){
-				data.addUnderLink(loadConfigNode(linkNode, dbTableName));
+				data.addUnderLink(loadColumnNode(linkNode, dbTableName, tableConstraints, overwrite, addUrl, urlAsPrimaryKey));
 				linkNode = linkNode.getNextSibling();
 			}
 		}else{
@@ -117,11 +140,16 @@ public class RetrievingConfigurationReader extends ConfigurationReader{
 			data.setDbColType(getColumnType(node));
 			data.setDbConstraints(node.getAttributes().getNamedItem("constraints")!=null ? node.getAttributes().getNamedItem("constraints").getNodeValue() : "");
 			
-			node = node.getFirstChild();
-			loadFirstChildData(node, data);
-	
-			node = node.getNextSibling();
-			loadLastChildData(node, data);
+			if (node.hasChildNodes()){
+				data.setOnlyDbData(false);
+				node = node.getFirstChild();
+				loadFirstChildData(node, data);
+		
+				node = node.getNextSibling();
+				loadLastChildData(node, data);
+			}else{
+				data.setOnlyDbData(true);
+			}
 			
 			node = node.getParentNode().getNextSibling();
 		}
@@ -250,26 +278,62 @@ public class RetrievingConfigurationReader extends ConfigurationReader{
 	public String parse(Document dom) {
 		StringBuilder message = new StringBuilder();
 		Node configNode = dom.getFirstChild();
+		parseConfigNode(configNode, message);
+		
+		Node tableNode = configNode.getFirstChild();
+		
+		while (tableNode != null) {
+			parseTableNode(tableNode, message);
+			tableNode = tableNode.getNextSibling();
+		}
+		return message.toString();
+	}
+	
+	private void parseConfigNode(Node configNode, StringBuilder message){
 		if (!configNode.getNodeName().equals("config")){
 			message.append("First element in configuration has to be node \'config\'\n");
-		}
-		Node tableNode = configNode.getFirstChild();
-		parseFirstTableNode(tableNode, message);
-		
-		Node firstTableNode = tableNode;
-		while (tableNode != null) {
-			if (tableNode != firstTableNode && tableNode.getAttributes().getLength() > 1) {
-				NamedNodeMap attrs = tableNode.getAttributes();
-				if(attrs.getLength() > 0){
-					message.append("Only the first table node can contain database attributes\n");
+		}else{
+			if (configNode.hasAttributes()) {
+				NamedNodeMap attrs = configNode.getAttributes();
+				if (attrs.getLength() != 5 ){
+					message.append("Only database data can be defined in node \'config\'\n");
 				}
-			}else if ((tableNode != firstTableNode && (tableNode.getAttributes().getLength() == 1) || (tableNode == firstTableNode && firstTableNode.getAttributes().getLength() == 6)) && tableNode.getAttributes().getNamedItem("overwrite") == null){
-				message.append("Wrong attribute for table node \'" + tableNode.getNodeName() + "\'\n");
+				for (int i = 0; i < attrs.getLength(); i++){
+					if(!(attrs.item(i).getNodeName().equals("host") || attrs.item(i).getNodeName().equals("port") || attrs.item(i).getNodeName().equals("dbname") || attrs.item(i).getNodeName().equals("user") || attrs.item(i).getNodeName().equals("password"))){
+						message.append("Attribute \'" + attrs.item(i) + "\' is wrong for node \'config\'\n");
+					}
+				}
+			}
+		}
+	}
+	
+	private void parseTableNode(Node tableNode, StringBuilder message){
+		if (tableNode.getAttributes().getLength() > 4) {
+			message.append("Wrong number of attributes in node \'" + tableNode.getNodeName() + "\'\n");
+		}else{
+			NamedNodeMap attrs = tableNode.getAttributes();
+			for (int i = 0; i<attrs.getLength(); i++){
+				String attrName = attrs.item(i).getNodeName();
+				if (!attrName.equals("overwrite") && !attrName.equals("addUrl") && !attrName.equals("constraints") && !attrName.equals("urlAsPrimaryKey")){
+					message.append("Wrong name of attribute \'" + attrName + "\' in node \'" + tableNode.getNodeName() + "\'\n");
+				}
 			}
 			Node overwrite;
 			if ((overwrite = tableNode.getAttributes().getNamedItem("overwrite")) != null){
 				if (!overwrite.getNodeValue().equals("true") && !overwrite.getNodeValue().equals("false")){
 					message.append("Wrong value of attribute \'overwrite\' in node \'" + tableNode.getNodeName() + "\'\n");
+				}
+			}
+			Node addUrl;
+			if ((addUrl = tableNode.getAttributes().getNamedItem("addUrl")) != null){
+				if (!addUrl.getNodeValue().equals("true") && !addUrl.getNodeValue().equals("false")){
+					message.append("Wrong value of attribute \'addUrl\' in node \'" + tableNode.getNodeName() + "\'\n");
+				}
+			}
+			Node urlAsPrimaryKey;
+			if ((urlAsPrimaryKey = tableNode.getAttributes().getNamedItem("urlAsPrimaryKey")) != null){
+				if (!urlAsPrimaryKey.getNodeValue().equals("true") && !urlAsPrimaryKey.getNodeValue().equals("false")){
+					message.append("Wrong value of attribute \'urlAsPrimaryKey\' in node \'" + tableNode.getNodeName() + "\'\n");
 				}
 			}
 			
@@ -279,49 +343,27 @@ public class RetrievingConfigurationReader extends ConfigurationReader{
 				if (databaseFields.contains(nodeList.item(k).getNodeName())) {
 					message.append("Wrong database fields names. Field name \'"
 							+ nodeList.item(k)
-							+ "\' is used more then one time\n");
+							+ "\' is used more then once\n");
 				}else{
 					databaseFields.add(nodeList.item(k).getNodeName());
 				}
 			}
-
-			parseColumnDataNodes(tableNode.getFirstChild(), message);
-			tableNode = tableNode.getNextSibling();
 		}
-		return message.toString();
+		parseColumnDataNodes(tableNode.getFirstChild(), message);
 	}
 	
-	private void parseFirstTableNode(Node firstTableNode, StringBuilder message){
-		if (firstTableNode.hasAttributes()) {
-			NamedNodeMap attrs = firstTableNode.getAttributes();
-			if (attrs.getLength() < 5 || attrs.getLength() > 6 || (attrs.getLength() == 5 && attrs.getNamedItem("overwrite") != null)){
-				message.append("All database data has to be defined in first table node");
-			}
-			for (int i = 0; i < attrs.getLength(); i++){
-				if(!(attrs.item(i).getNodeName().equals("host") || attrs.item(i).getNodeName().equals("port") || attrs.item(i).getNodeName().equals("dbname") || attrs.item(i).getNodeName().equals("user") || attrs.item(i).getNodeName().equals("password") || attrs.item(i).getNodeName().equals("overwrite"))){
-					message.append("Attribute \'" + attrs.item(i) + "\' is wrong for node \'" + firstTableNode.getNodeName() + "\'\n");
-				}
-			}
-		}
-	}
 
 	private void parseColumnDataNodes(Node node, StringBuilder message) {
 		while (node != null) {
 			if (node.getNodeName().equals("link")) {	//link do przejscia na podstrone
 				parseLinkNode(node, message);
 				parseColumnDataNodes(node.getFirstChild(), message);
-			} else if (node.getChildNodes() == null		
-					|| node.getChildNodes().getLength() != 2) {		//dla zwyklego wezla z danymi
-
-//				if(node.getChildNodes() == null) { // TODO: obsluga dla wezlow definiujacych tylko pola bazodanowe
-				message.append("Wrong children amount for node \'"
-						+ node.getNodeName() + "\'\n");
-				node = node.getNextSibling();
-				// message.append("Node " + node.getNodeName() +
-				// " has to have exactly 2 children: \n");
-				// message.append("	1. Searching benchmark (<benchmark_node_type [no=\"same_benchmark_pattern_no\"]>benchmark_text</benchmark_note_type>");
-				// message.append("	2. Searching info <java_data_type path=\"path_of_dom_nodes_to_searched_element\" type=\"search_node_type\" [pattern=\"pattern_to_pull_out_element_from_complex_text(\"array=\"true_for_array_data\" ");
-			} else {
+			} else if (node.getChildNodes() != null		
+					&& node.getChildNodes().getLength() != 2) {		//dla zwyklego wezla z danymi
+					message.append("Wrong children amount for node \'"
+							+ node.getNodeName() + "\'\n");
+					node = node.getNextSibling();
+			} else if (node.hasChildNodes()){
 				NamedNodeMap attrs = node.getAttributes();
 				for (int i = 0; i < attrs.getLength(); i++){
 					if (!attrs.item(i).getNodeName().equals("type") && !attrs.item(i).getNodeName().equals("constraints")){

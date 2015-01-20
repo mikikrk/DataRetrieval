@@ -11,7 +11,11 @@ public class RetrievingData extends FindNodeData{
 	private String dbColName;
 	private String dbColType;
 	private String dbConstraints;
-	private boolean dbOverwrite;
+	private String dbTableConstraints;
+	private boolean dbUrlAsPrimaryKey = false;
+	private boolean dbAddUrl = false;
+	private boolean dbOverwrite = false;
+	private boolean onlyDbData = false;
 	
 	private ArrayList<Integer> benchmarkNo = new ArrayList<Integer>();
 	
@@ -77,5 +81,29 @@ public class RetrievingData extends FindNodeData{
 	}
 	public void setDbOverwrite(boolean dbOverwrite) {
 		this.dbOverwrite = dbOverwrite;
+	}
+	public String getDbTableConstraints() {
+		return dbTableConstraints;
+	}
+	public void setDbTableConstraints(String dbTableConstraints) {
+		this.dbTableConstraints = dbTableConstraints;
+	}
+	public boolean isDbUrlAsPrimaryKey() {
+		return dbUrlAsPrimaryKey;
+	}
+	public void setDbUrlAsPrimaryKey(boolean dbUrlAsPrimaryKey) {
+		this.dbUrlAsPrimaryKey = dbUrlAsPrimaryKey;
+	}
+	public boolean isDbAddUrl() {
+		return dbAddUrl;
+	}
+	public void setDbAddUrl(boolean dbAddUrl) {
+		this.dbAddUrl = dbAddUrl;
+	}
+	public boolean isOnlyDbData() {
+		return onlyDbData;
+	}
+	public void setOnlyDbData(boolean onlyDbData) {
+		this.onlyDbData = onlyDbData;
 	}
 }

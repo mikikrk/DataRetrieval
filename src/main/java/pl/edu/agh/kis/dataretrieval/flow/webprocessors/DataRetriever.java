@@ -62,7 +62,9 @@ public class DataRetriever{
 			try{
 				if (siteData.get(configNode.getDbTableName()) == null){
 					siteData.put(configNode.getDbTableName(), new ArrayList<DbFieldData>());
-					siteData.get(configNode.getDbTableName()).add(new DbFieldData("url", "TEXT", false, url));
+					if (configNode.isDbAddUrl() || configNode.isDbUrlAsPrimaryKey()){
+						siteData.get(configNode.getDbTableName()).add(new DbFieldData("url", "TEXT", false, configNode.isDbUrlAsPrimaryKey() ? "PRIMARY KEY" : "", "", url));
+					}
 				}
 				if(configNode.getDataType().equals("link")){
 					LinkProcessor linkProcessor = new LinkProcessor();

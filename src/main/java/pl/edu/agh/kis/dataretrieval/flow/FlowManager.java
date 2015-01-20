@@ -1,5 +1,7 @@
 package pl.edu.agh.kis.dataretrieval.flow;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -7,10 +9,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.ws.Holder;
 import javax.xml.xpath.XPathExpressionException;
 
-import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -33,9 +40,9 @@ import pl.edu.agh.kis.dataretrieval.configuration.searching.SwitchData;
 import pl.edu.agh.kis.dataretrieval.database.DbFieldData;
 import pl.edu.agh.kis.dataretrieval.database.RetrieverDao;
 import pl.edu.agh.kis.dataretrieval.flow.webprocessors.ContentProcessor;
+import pl.edu.agh.kis.dataretrieval.flow.webprocessors.DataRetriever;
 import pl.edu.agh.kis.dataretrieval.flow.webprocessors.FormProcessor;
 import pl.edu.agh.kis.dataretrieval.flow.webprocessors.LinkProcessor;
-import pl.edu.agh.kis.dataretrieval.flow.webprocessors.DataRetriever;
 import pl.edu.agh.kis.dataretrieval.flow.webprocessors.exceptions.NoSiteRetrievedException;
 import pl.edu.agh.kis.dataretrieval.flow.webprocessors.exceptions.NotAllFieldsRetrievedException;
 import pl.edu.agh.kis.dataretrieval.gui.windows.FormWindow;
@@ -79,65 +86,81 @@ public class FlowManager implements Runnable{
 			RetrievingConfigurationReader retrievingConfigReader = new RetrievingConfigurationReader();
 			List<RetrievingData> crawlingDataList = retrievingConfigReader.load(retrievingConfigPath);
 			RetrieverDao dao = new RetrieverDao(retrievingConfigPath);
-			dao.createTable(crawlingDataList);
-			WebResponse startPageResp = goToSite(searchingData.getUrl());
-			
-			int sitesLeft = searchingData.getMaxRecords();
-			int startLink = searchingData.getCrawledSites() + 1;
-			int crawledSites;
-			do {
-				crawledSites = 0;
-				if (bulkMode) {
-					FormProcessor.iterateUsedValues(searchingData, startLink);
-				}
-				try{
-					resp = startPageResp;
-					ContentData contentData = goThroughtFlow(searchingData.getFlowDataList());
-					ContentProcessor contentProcessor = new ContentProcessor(resp, contentData, progressWindow, sitesLeft, startLink);
-					startLink = 1; //w kolejnych iteracjach w trybie bulkowym strony maja byc juz pobierane od pocz¹tku
-					
-					while(contentProcessor.hasNextSite() && keepRetrieving.value == true){
-						progressWindow.pause();		//Sprawdza czy postêp zosta³ wstrzymany i jeœli tak to czeka na kontynuacje
-						try{
-							WebResponse siteResp = contentProcessor.findNextSite();
-							crawledSites++;
-							
-							Map<String, List<DbFieldData>> siteData;
+			try{
+				dao.createTable(crawlingDataList);
+				WebResponse startPageResp = goToSite(searchingData.getUrl());
+				
+				int sitesLeft = searchingData.getMaxRecords();
+				int startLink = searchingData.getStartSite();
+				int iteration = 1;
+				int crawledSites;
+				boolean allBulkCombinations = false;
+				do {
+					crawledSites = 0;
+					if (bulkMode) {
+						if (iteration++ != 1){
+							startLink = 1; //w kolejnych iteracjach w trybie bulkowym strony maja byc juz pobierane od pocz¹tku
+						}
+						allBulkCombinations = FormProcessor.iterateUsedValues(searchingData, startLink);
+					}
+					try{
+						resp = startPageResp;
+						progressWindow.printInfo("Finding sites with data");
+						ContentData contentData = goThroughtFlow(searchingData.getFlowDataList());
+						ContentProcessor contentProcessor = new ContentProcessor(resp, contentData, progressWindow, sitesLeft, startLink);
+						
+						while(contentProcessor.hasNextSite() && keepRetrieving.value == true && (sitesLeft>0 || sitesLeft == -1)){
+							progressWindow.pause();		//Sprawdza czy postêp zosta³ wstrzymany i jeœli tak to czeka na kontynuacje
 							try{
-								siteData = DataRetriever.readData(siteResp, crawlingDataList);
-							}catch(NotAllFieldsRetrievedException e){
-								siteData = e.getSiteData();
-								printError(e.getMessage());
+								WebResponse siteResp = contentProcessor.findNextSite();
+								if (siteResp != null){
+									if (sitesLeft != -1){
+										sitesLeft--;
+									}
+									crawledSites++;
+									
+									Map<String, List<DbFieldData>> siteData;
+									try{
+										siteData = DataRetriever.readData(siteResp, crawlingDataList);
+									}catch(NotAllFieldsRetrievedException e){
+										siteData = e.getSiteData();
+										printError(e.getMessage());
+									}
+									for (Entry<String, List<DbFieldData>> entry: siteData.entrySet()){
+									    dao.addSiteData(entry.getKey(), entry.getValue());
+									}
+									retrievingStarted = true;
+								}
+							}catch(final Exception e){
+								handleException(e);
 							}
-							for (Entry<String, List<DbFieldData>> entry: siteData.entrySet()){
-							    dao.addSiteData(entry.getKey(), entry.getValue());
-							}
-							retrievingStarted = true;
-						}catch(final Exception e){
-							handleException(e);
+						}
+					
+					}catch(NoSiteRetrievedException e){		//nie zosta³ pobrany ¿aden link
+						if (!bulkMode){	//zakladamy ze tryb bulkowy moze wyszukac konfiguracje, w ktorej nie ma ¿adnych wynikow wyszukiwania
+							throw e;
+						}else {
+							startLink = 1;
+							System.out.println("WARN: " + e.getMessage());
 						}
 					}
-				
-				}catch(NoSiteRetrievedException e){		//nie zosta³ pobrany ¿aden link
-					if (!bulkMode){	//zakladamy ze tryb bulkowy moze wyszukac konfiguracje, w ktorej nie ma ¿adnych wynikow wyszukiwania
-						throw e;
-					}else {
-						startLink = 1;
-						System.out.println("WARN: " + e.getMessage());
+				} while (bulkMode && !allBulkCombinations && sitesLeft > 0 && keepRetrieving.value == true);
+			
+				if (bulkMode){
+					String newConfig;
+					if (allBulkCombinations && sitesLeft > 0 && keepRetrieving.value == true){
+						removeBulkAttributes(searchingData);
+					}else{
+						actualizeConfiguration(searchingData, startLink + crawledSites);
 					}
 				}
-				if (sitesLeft != -1){
-					sitesLeft -= crawledSites;
-				}
-			} while (bulkMode && sitesLeft > 0);
-			dao.closeConnection();
-			if (bulkMode){
-				actualizeConfiguration(searchingData, crawledSites);
+			}finally{
+				dao.closeConnection();
 			}
 		} catch (Exception e){
 			e.printStackTrace();
 			handleException(e);
-		}
+		} 
 		String endMessage;
 		if (retrievingStarted){
 			endMessage = "Retrieving has been finished";
@@ -152,6 +175,7 @@ public class FlowManager implements Runnable{
 				}
 			}.start();
 			
+			progressWindow.printInfo(endMessage);
 			PopUpDialog successDialog = new PopUpDialog(endMessage);
 			successDialog.setVisible(true);
 		}else{
@@ -170,9 +194,9 @@ public class FlowManager implements Runnable{
 			} else if (flowDataObj instanceof FormData){
 				FormData formData = (FormData) flowDataObj;
 				formProcessor.loadForm(formData, resp);
-				formProcessor.setDefaultValues(formData.getFields(), bulkMode);
+				FormProcessor.setDefaultValues(formData.getFields(), bulkMode);
 				FormWindow formWindow = new FormWindow(formData.getFields());
-				if (windowMode){
+				if (windowMode && !bulkMode){
 					formWindow.setVisible(true);
 					formWindow.waitForSubmit();
 				}else{
@@ -202,41 +226,99 @@ public class FlowManager implements Runnable{
 		return null;
 	}
 	
-	private void actualizeConfiguration(SearchingData searchingData, int crawledSites) throws ParserConfigurationException, SAXException, IOException{
+	private void removeBulkAttributes(SearchingData searchingData) throws ParserConfigurationException, SAXException, IOException, TransformerException{
 		Document configDOM = ConfigurationReader.loadDom(searchingConfigPath);
+		removeStartSite(configDOM.getFirstChild());
 		Node flowNode = configDOM.getFirstChild().getFirstChild();
-		Attr newUsedValues = configDOM.createAttribute("usedValues");
-		actualizeConfigUsedValues(searchingData.getFlowDataList(), flowNode, newUsedValues);
-		configDOM.getTextContent();
+		removeConfigUsedValues(searchingData.getFlowDataList(), flowNode);
+		saveChangedConfiguration(configDOM);
 	}
 	
-	private void actualizeConfigUsedValues(List<ConfigData> flowDataList, Node flowNode, Attr newUsedValues){
+	private void removeStartSite(Node urlNode){
+		urlNode.getAttributes().removeNamedItem("startSite");
+	}
+	
+	private void removeConfigUsedValues(List<ConfigData> flowDataList, Node flowNode){
 		for (ConfigData flowData: flowDataList){
 			if (flowData instanceof FormData){
 				Node fieldNode = flowNode.getFirstChild();
 				for (FormFieldData fieldData: ((FormData) flowData).getFields()){
-					Node usedValues;
-					if((usedValues = fieldNode.getAttributes().getNamedItem("usedValues")) == null){
-						usedValues = newUsedValues.cloneNode(false);
+					if (fieldData.getLastUsedValues() != null && !fieldData.getLastUsedValues().isEmpty()){
+						if(fieldNode.getAttributes().getNamedItem("lastUsedValues") != null){
+							fieldNode.getAttributes().removeNamedItem("lastUsedValues");
+						}
+						fieldNode = fieldNode.getNextSibling();
 					}
-					if (fieldData.getUsedValues().containsAll(fieldData.getOptionValues())){
-						fieldData.clearUsedValues();
-						fieldData.addUsedValue("$all$");
+				}
+			}
+			if (flowData instanceof SwitchData){
+				Node caseNode = flowNode.getFirstChild();
+				for (List<ConfigData> caseFlowDataList: ((SwitchData) flowData).getCases().values()){
+					removeConfigUsedValues(caseFlowDataList, caseNode.getFirstChild());
+				}
+			}
+			flowNode = flowNode.getNextSibling();
+		}
+	}
+	
+	private void actualizeConfiguration(SearchingData searchingData, int startSite) throws ParserConfigurationException, SAXException, IOException, TransformerException{
+		Document configDOM = ConfigurationReader.loadDom(searchingConfigPath);
+		actualizeStartSite(configDOM, startSite);
+		Node flowNode = configDOM.getFirstChild().getFirstChild();
+		Attr newLastUsedValues = configDOM.createAttribute("lastUsedValues");
+		actualizeConfigUsedValues(searchingData.getFlowDataList(), flowNode, newLastUsedValues);
+		saveChangedConfiguration(configDOM);
+	}
+	
+	private void actualizeStartSite(Document configDOM, int startSite){
+		Node urlNode = configDOM.getFirstChild();
+		Node startSiteAttr = urlNode.getAttributes().getNamedItem("startSite");
+		if (startSiteAttr == null){
+			startSiteAttr = configDOM.createAttribute("startSite");
+		}
+		startSiteAttr.setNodeValue(Integer.toString(startSite));
+		urlNode.getAttributes().setNamedItem(startSiteAttr);
+	}
+	
+	private void actualizeConfigUsedValues(List<ConfigData> flowDataList, Node flowNode, Attr newLastUsedValues){
+		for (ConfigData flowData: flowDataList){
+			if (flowData instanceof FormData){
+				Node fieldNode = flowNode.getFirstChild();
+				for (FormFieldData fieldData: ((FormData) flowData).getFields()){
+					if (fieldData.getLastUsedValues() != null && !fieldData.getLastUsedValues().isEmpty()){
+						Node usedValues;
+						if((usedValues = fieldNode.getAttributes().getNamedItem("lastUsedValues")) == null){
+							usedValues = newLastUsedValues.cloneNode(false);
+						}
+						usedValues.setNodeValue(fieldData.getLastUsedValues());
+						fieldNode.getAttributes().setNamedItem(usedValues);
 					}
-					usedValues.setNodeValue(StringUtils.join(fieldData.getUsedValues(), "|"));
-					fieldNode.getAttributes().setNamedItem(usedValues);
 					fieldNode = fieldNode.getNextSibling();
 				}
 			}
 			if (flowData instanceof SwitchData){
 				Node caseNode = flowNode.getFirstChild();
 				for (List<ConfigData> caseFlowDataList: ((SwitchData) flowData).getCases().values()){
-					actualizeConfigUsedValues(caseFlowDataList, caseNode.getFirstChild(), newUsedValues);
+					actualizeConfigUsedValues(caseFlowDataList, caseNode.getFirstChild(), newLastUsedValues);
 				}
 			}
 			flowNode = flowNode.getNextSibling();
 		}
 	}
+	
+	private void saveChangedConfiguration(Document DOM) throws TransformerException, FileNotFoundException{
+		File file = new File(searchingConfigPath);
+		
+		TransformerFactory tFactory = TransformerFactory.newInstance();
+		Transformer transformer = tFactory.newTransformer();
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+
+		DOMSource source = new DOMSource(DOM);
+		StreamResult result = new StreamResult(file);
+		transformer.transform(source, result);
+	}
+	
 	private WebResponse goToSite(String url) throws RetrievalException, IOException, SAXException{
 		for (int retries = 0; retries < 5; retries++){
 			try{
@@ -267,7 +349,9 @@ public class FlowManager implements Runnable{
 		} catch (ParserConfigurationException e) {
 			errorMessage = "Configuration file is not proper xml file: \n" + e.getMessage();
 		} catch (InterruptedException e){
-			errorMessage = "Error while waiting for fufilling form\n" + e.getMessage();
+			errorMessage = "Error occured while waiting for fufilling form\n" + e.getMessage();
+		} catch (TransformerException e){
+			errorMessage = "Error occured while overwriting searching configuration at " + searchingConfigPath + "\n" + e.getMessage();
 		} catch (Exception e){
 			errorMessage = "Error while running program\n" + e.getMessage() == null ? "" : e.getMessage();
 		}
