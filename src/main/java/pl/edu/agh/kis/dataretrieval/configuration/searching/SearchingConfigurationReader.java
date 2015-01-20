@@ -211,6 +211,9 @@ public class SearchingConfigurationReader extends ConfigurationReader {
 		if (fieldAttrs.getNamedItem("values") != null) {
 			fieldData.addAlternativeDefaultValues(Arrays.asList(fieldAttrs.getNamedItem("values")
 					.getNodeValue().split("\\|")));
+			if (fieldData.getAlternativeDefaultValues().size() == 1 && fieldData.getAlternativeDefaultValues().get(0).equals("$every$")){
+				
+			}
 		}
 		if (fieldAttrs.getNamedItem("usedValues") != null) {
 			fieldData.addUsedValues(Arrays.asList(fieldAttrs

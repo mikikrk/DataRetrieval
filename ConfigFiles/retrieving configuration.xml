@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<config>
-    <journals host="localhost" port="5432" dbname="postgres" user="postgres" password="agh" overwrite="true">
+<config host="localhost" port="5432" dbname="postgres" user="postgres" password="agh">
+    <journals overwrite="true">
         <title>
             <text>Full Journal Title:</text>
             <string path="parent/sibling/child" type="text"/>
