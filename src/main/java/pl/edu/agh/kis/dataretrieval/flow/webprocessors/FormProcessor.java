@@ -125,6 +125,7 @@ public class FormProcessor {
 
 	private void setFieldOptions(FormParameter formParameter,
 			FormFieldData.FieldType fieldType, List<String> options) {
+		options.clear();
 		if (fieldType.equals(FormFieldData.FieldType.COMBOBOX)
 				|| fieldType.equals(FormFieldData.FieldType.SELECT_ONE)
 				|| fieldType.equals(FormFieldData.FieldType.SELECT_MULTIPLE)
@@ -344,10 +345,14 @@ public class FormProcessor {
 			if (!alternativeDefaultValues.isEmpty()) {
 				if (alternativeDefaultValues.get(0).equals("$all$")){
 					setAllValues(fieldData);
-					fieldData.setLastUsedValues(fieldData.getAlternativeDefaultValues().get(0));
+					if (fieldData.getLastUsedValues() == null || fieldData.getLastUsedValues().isEmpty()){
+						fieldData.setLastUsedValues(fieldData.getAlternativeDefaultValues().get(0));
+					}
 				}else if(alternativeDefaultValues.get(0).equals("$every$")){
 					setEveryValues(fieldData);
-					fieldData.setLastUsedValues(fieldData.getAlternativeDefaultValues().get(0));
+					if (fieldData.getLastUsedValues() == null || fieldData.getLastUsedValues().isEmpty()){
+						fieldData.setLastUsedValues(fieldData.getAlternativeDefaultValues().get(0));
+					}
 				}
 				List<String> defaultValues;
 				if (bulkMode) {

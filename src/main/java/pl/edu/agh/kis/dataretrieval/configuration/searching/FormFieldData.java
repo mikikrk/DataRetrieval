@@ -65,7 +65,9 @@ public class FormFieldData {
 
 	public int getSize(){
 		if(fieldType.equals(FieldType.CHECKBOX) || fieldType.equals(FieldType.SELECT_ONE) || fieldType.equals(FieldType.SELECT_MULTIPLE) || fieldType.equals(FieldType.RADIO)){
-			return (options.size() > 6 ? 6 : options.size()) + (description.isEmpty() ? 0 : 1);
+			return (options.size() > 8 ? 8 : options.size()) + (description.isEmpty() ? 0 : 1);
+		}if (fieldType.equals(FieldType.TEXTAREA)) {
+			return 5 + (description.isEmpty() ? 0 : 1);
 		}else{
 			return 1 + (description.isEmpty() ? 0 : 1);
 		}
@@ -89,6 +91,10 @@ public class FormFieldData {
 		}else{
 			components.add(component);
 		}
+	}
+	
+	public void clearComponents(){
+		components.clear();
 	}
 
 	public String getFieldName() {
@@ -215,6 +221,9 @@ public class FormFieldData {
 	}
 	public void addValues(List<String> values) {
 		this.values.addAll(values);
+	}
+	public void clearValues(){
+		values.clear();
 	}
 	
 	public List<String> getOptionValues(){

@@ -38,19 +38,9 @@ public class FormWindow extends JFrame {
 		setTitle("Form");
 		this.fields = fields;
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 450, getRowsAmount() * 30);
+		setBounds(100, 100, 400, getRowsAmount() * 25);
 		
 		addForms(fields);
-		
-		JButton btnNewButton = new JButton("Submit");
-		btnNewButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				setSubmited();
-				closeWindow();
-			}
-		});
-		add(new JLabel());
-		add(btnNewButton);
 	}
 	
 	private void addForms(List<FormFieldData> fields) throws RetrievalException{
@@ -58,10 +48,16 @@ public class FormWindow extends JFrame {
 		GridBagConstraints constraints = new GridBagConstraints();
 		
 		setLayout(gridbag);
+		constraints.gridx = 0;
+		constraints.anchor = GridBagConstraints.WEST;
+		int counter = 0;
 		for(FormFieldData field: fields){
+			field.clearComponents();
+			field.clearValues();
 			if(!field.getDescription().isEmpty()){
 				JLabel label = new JLabel(field.getDescription());
-				add(label);
+				constraints.gridy = counter++;
+				add(label, constraints);
 			}
 			if (field.getFieldType() != null && field.getFieldType().equals(FieldType.COMBOBOX)){
 				JComboBox<String> combo = new JComboBox<String>();
@@ -87,7 +83,9 @@ public class FormWindow extends JFrame {
 						throw new RetrievalException("Multiple default values are invalid for combo box");
 					}
 				}
-				add(combo);
+				
+				constraints.gridy = counter++;
+				add(combo, constraints);
 				field.setComponent(combo);
 			}else if (field.getFieldType() != null && field.getFieldType().equals(FieldType.SELECT_ONE)){
 				JList<String> list = new JList<String>(new DefaultListModel<String>());
@@ -104,8 +102,10 @@ public class FormWindow extends JFrame {
 					List<String> defaultValues = field.getDefaultValues();
 					if (defaultValues.size() == 1){
 						String value = defaultValues.get(0);
-						if (field.getOptionsDescriptions().contains(value) || field.getOptions().contains(value)){
-							list.setSelectedValue(value, false);
+						if (field.getOptions().contains(value)){
+							list.setSelectedIndex(field.getOptions().indexOf(value));
+						}else if (field.getOptionsDescriptions().contains(value)){
+							list.setSelectedIndex(field.getOptionsDescriptions().indexOf(value));
 						}else{
 							throw new RetrievalException("Default value \'" + value + "\' is invalid");
 						}
@@ -113,12 +113,13 @@ public class FormWindow extends JFrame {
 						throw new RetrievalException("Multiple default values are invalid for single selection list");
 					}
 				}else{
-					list.setSelectedIndex(0);
+					list.setSelectedIndex(1);
 				}
 				JScrollPane jsp = new JScrollPane(list);
-				constraints.gridheight = field.getSize() - (field.getDescription().isEmpty() ? 0 : 1);
+				counter += field.getSize() - (field.getDescription().isEmpty() ? 0 : 1);
+				constraints.gridy = counter;
 				gridbag.setConstraints(jsp, constraints);
-				add(jsp);
+				add(jsp, constraints);
 				field.setComponent(list);
 			}else if (field.getFieldType() != null && field.getFieldType().equals(FieldType.SELECT_MULTIPLE)){
 				JList<String> list = new JList<String>(new DefaultListModel<String>());
@@ -129,10 +130,14 @@ public class FormWindow extends JFrame {
 				}else{
 					options = field.getOptionsDescriptions().toArray(new String[]{});
 				}
+				list.setListData(options);
+				list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 				if (!field.getDefaultValues().isEmpty()){
 					for (String value: field.getDefaultValues()){
-						if (field.getOptionsDescriptions().contains(value) || field.getOptions().contains(value)){
-							list.setSelectedValue(value, false);
+						if (field.getOptions().contains(value)){
+							list.setSelectedIndex(field.getOptions().indexOf(value));
+						}else if (field.getOptionsDescriptions().contains(value)){
+							list.setSelectedIndex(field.getOptionsDescriptions().indexOf(value));
 						}else{
 							throw new RetrievalException("Default value \'" + value + "\' is invalid");
 						}
@@ -140,12 +145,11 @@ public class FormWindow extends JFrame {
 				}else{
 					list.setSelectedIndex(0);
 				}
-				list.setListData(options);
-				list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 				JScrollPane jsp = new JScrollPane(list);
-				constraints.gridheight = field.getSize() - (field.getDescription().isEmpty() ? 0 : 1);
+				counter += field.getSize() - (field.getDescription().isEmpty() ? 0 : 1);
+				constraints.gridy = counter;
 				gridbag.setConstraints(jsp, constraints);
-				add(jsp);
+				add(jsp, constraints);
 				field.setComponent(list);
 			}else if (field.getFieldType() != null && field.getFieldType().equals(FieldType.CHECKBOX)){
 				List<String> options = field.getOptions();
@@ -160,7 +164,8 @@ public class FormWindow extends JFrame {
 					if (!field.getDefaultValues().isEmpty() && (field.getDefaultValues().contains(optionsDescriptions.get(i)) || field.getDefaultValues().contains(options.get(i)))){
 						checkbox.setSelected(true);
 					}
-					add(checkbox);
+					constraints.gridy = counter++;
+					add(checkbox, constraints);
 					field.addComponent(checkbox);
 				}
 			}else  if (field.getFieldType() != null && field.getFieldType().equals(FieldType.RADIO)){
@@ -191,7 +196,8 @@ public class FormWindow extends JFrame {
 							radio.setSelected(true);
 						}
 					}
-					add(radio);
+					constraints.gridy = counter++;
+					add(radio, constraints);
 					bg.add(radio);
 					field.addComponent(radio);
 				}
@@ -210,7 +216,8 @@ public class FormWindow extends JFrame {
 						throw new RetrievalException("Multiple default values are invalid for single selection list");
 					}
 				}
-				add(textField);
+				constraints.gridy = counter++;
+				add(textField, constraints);
 				field.setComponent(textField);
 			}else if (field.getFieldType() != null && field.getFieldType().equals(FieldType.TEXTAREA)){
 				JTextArea textArea = new JTextArea();
@@ -228,12 +235,21 @@ public class FormWindow extends JFrame {
 					}
 				}
 				JScrollPane jsp = new JScrollPane(textArea);
-				constraints.gridheight = 5;
+				constraints.gridy = counter++;
 				gridbag.setConstraints(jsp, constraints);
-				add(jsp);
+				add(jsp, constraints);
 				field.setComponent(textArea);
 			}
 		}
+		JButton btnNewButton = new JButton("Submit");
+		btnNewButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				setSubmited();
+				closeWindow();
+			}
+		});
+		constraints.gridy = counter++;
+		add(btnNewButton, constraints);
 	}
 	
 	private synchronized void setSubmited(){

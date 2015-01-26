@@ -1,7 +1,6 @@
 package pl.edu.agh.kis.dataretrieval.flow.webprocessors;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -69,7 +68,7 @@ public class ContentProcessor {
 					goToNextPage();
 					actualizeSitesBenchmarks();
 				}else{
-					throw new NoSiteRetrievedException(linkCounter, "CrawledSites number is bigger then avaliable sites");
+					throw new NoSiteRetrievedException(linkCounter, "StartSite number is bigger then avaliable sites");
 				}
 			}
 		}

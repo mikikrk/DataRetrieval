@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<url address="http://admin-apps.webofknowledge.com/JCR/JCR?SID" startSite="542">
+<url address="http://admin-apps.webofknowledge.com/JCR/JCR?SID" >
   <link type="text" value="establish a new session"/>
   <form as="form1" name="limits">
-    <edition lastUsedValues="$every$" options="JCR Science Edition;JCR Social Sciences Edition" values="$every$"/>
+    <edition options="JCR Science Edition;JCR Social Sciences Edition"/>
     <science_year>JCR Science Edition Year</science_year>
     <social_year>JCR Social Sciences Edition Year</social_year>
-    <RQ lastUsedValues="View all journals" options="View a group of journals by;Search for a specific journal;View all journals" values="View all journals"/>
+    <RQ options="View a group of journals by;Search for a specific journal;View all journals" values="View all journals"/>
     <view>View a group of journals by options:</view>
   </form>
   <switch field1="form1.RQ">
